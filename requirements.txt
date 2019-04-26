@@ -1,0 +1,13 @@
+# first do this (need to do it manually?)
+pip
+setuptools
+
+# pypi packages
+numpy
+matplotlib
+tensorflow
+keras
+pydot
+
+# my package(s)
+#git+https://github.com/itsayellow/tictoc.git
