@@ -3,6 +3,7 @@ pip
 setuptools
 
 # pypi packages
+Jinja2
 numpy
 matplotlib
 tensorflow
