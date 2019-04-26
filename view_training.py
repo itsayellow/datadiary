@@ -132,15 +132,7 @@ def plot_loss_acc(fig, epochs, train_data):
     return(ax1, ax2)
 
 
-def main(argv=None):
-    args = process_command_line(argv)
-
-    data_dir = pathlib.Path(args.datadir)
-    model_name = data_dir.name.lstrip("data_")
-    diary_dir = pathlib.Path(args.diarydir) / model_name
-
-    diary_dir.mkdir(parents=True, exist_ok=True)
-
+def gen_data_plots(data_dir, diary_dir):
     train_data_path = data_dir / 'train_history.json'
     with train_data_path.open("r") as train_data_fh:
         train_data = json.load(train_data_fh)
@@ -177,12 +169,21 @@ def main(argv=None):
 
     # save and display to computer
     fig.savefig(str(diary_dir / "training_metrics.png"), bbox_inches="tight")
-    plt.show()
 
-    # load model
+
+def main(argv=None):
+    args = process_command_line(argv)
+
+    data_dir = pathlib.Path(args.datadir)
+    model_name = data_dir.name.lstrip("data_")
+    diary_dir = pathlib.Path(args.diarydir) / model_name
+    diary_dir.mkdir(parents=True, exist_ok=True)
+
+    # make plot png
+    gen_data_plots(data_dir, diary_dir)
+
+    # make model structure png
     my_model = load_model(str(data_dir / 'saved_models' / 'weights.best.hdf5'))
-
-    # visualize model
     plot_model(my_model, to_file=str(diary_dir / 'model.png'), show_shapes=True)
 
     return 0
