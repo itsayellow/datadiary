@@ -1,29 +1,8 @@
 #!/usr/bin/env python3
 
+
 from jinja2 import FileSystemLoader, Environment
-
-# Configure Jinja and ready the loader
-env = Environment(
-    loader=FileSystemLoader(searchpath="templates")
-)
-
-# Assemble the templates we'll use
-base_template = env.get_template("report.html")
-table_section_template = env.get_template("table_section.html")
-
-# Content to be published
-title = "Model Report"
-sections = list()
-sections.append(table_section_template.render(
-    model="VGG19",
-    dataset="VGG19_results.csv",
-    table="Table goes here."
-))
-sections.append(table_section_template.render(
-    model="MobileNet",
-    dataset="MobileNet_results.csv",
-    table="Table goes here."
-))
+import pathlib
 
 
 def main():
@@ -32,11 +11,39 @@ def main():
     Render a template and write it to file.
     :return:
     """
+    # Configure Jinja and ready the loader
+    env = Environment(
+        loader=FileSystemLoader(searchpath="templates")
+    )
+
+    # Assemble the templates we'll use
+    base_template = env.get_template("report.html")
+    table_section_template = env.get_template("table_section.html")
+
+    # Content to be published
+    title = "Model Report"
+    sections = list()
+    sections.append(table_section_template.render(
+        model="VGG19",
+        dataset="VGG19_results.csv",
+        table="Table goes here."
+    ))
+    sections.append(table_section_template.render(
+        model="MobileNet",
+        dataset="MobileNet_results.csv",
+        table="Table goes here."
+    ))
+
+
+    pathlib.Path("outputs").mkdir(exist_ok=True)
+
     with open("outputs/report.html", "w") as f:
-        f.write(base_template.render(
-            title=title,
-            sections=sections
-        ))
+        f.write(
+                base_template.render(
+                    title=title,
+                    sections=sections
+                    )
+                )
 
 
 if __name__ == "__main__":
