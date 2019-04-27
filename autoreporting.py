@@ -23,16 +23,20 @@ def main():
     # Content to be published
     title = "Model Report"
     sections = list()
-    sections.append(table_section_template.render(
-        model="VGG19",
-        dataset="VGG19_results.csv",
-        table="Table goes here."
-    ))
-    sections.append(table_section_template.render(
-        model="MobileNet",
-        dataset="MobileNet_results.csv",
-        table="Table goes here."
-    ))
+    sections.append(
+            table_section_template.render(
+                model="VGG19",
+                dataset="VGG19_results.csv",
+                table="Table goes here."
+                )
+            )
+    sections.append(
+            table_section_template.render(
+                model="MobileNet",
+                dataset="MobileNet_results.csv",
+                table="Table goes here."
+                )
+            )
 
 
     pathlib.Path("outputs").mkdir(exist_ok=True)
