@@ -1,8 +1,103 @@
 #!/usr/bin/env python3
 
+# https://dev.to/goyder/automatic-reporting-in-python---part-1-from-planning-to-hello-world-32n1
+# https://dev.to/goyder/automatic-reporting-in-python---part-2-from-hello-world-to-real-insights-8p3
+# https://dev.to/goyder/automatic-reporting-in-python---part-3-packaging-it-up-1185
+
+
+import pathlib
 
 from jinja2 import FileSystemLoader, Environment
-import pathlib
+import pandas as pd
+
+
+# Allow for very wide columns - otherwise columns are spaced and ellipse'd
+pd.set_option("display.max_colwidth", 200)
+
+
+class ModelResults:
+    """
+    Class to store the results of a model run and associated data.
+    """
+
+    def __init__(self, model_name, filepath):
+        """
+        :param model_name: Name of model.
+        :param filepath: Filepath to results .csv.
+        """
+        self.model_name = model_name
+        self.filepath = filepath
+
+        self.dataset = pathlib.Path(filepath).name
+        self.df_results = csv_to_df(filepath)  # Filesystem access
+
+        self.number_of_images = len(self.df_results)
+
+        self.accuracy = self._calculate_accuracy()
+
+        self.misidentified_images = self._get_misidentified_images()
+        self.number_misidentified = len(self.misidentified_images)
+    def _calculate_accuracy(self):
+        """
+        Return the accuracy for the dataset.
+        :return: Float of dataset accuracy [0..1].
+        """
+        number_correct = len(self.df_results[self.df_results["correct"] == True])
+        number_total = len(self.df_results)
+        return number_correct / number_total
+
+    def _get_misidentified_images(self):
+        """
+        Return the names misidentified images.
+        :return: List of strings of misidentified image filenames.
+        """
+        df_misidentified = self.df_results[self.df_results["correct"] == False]
+        misidentified_images = df_misidentified.index.tolist()
+        return misidentified_images
+
+    def get_results_df_as_html(self):
+        """
+        Return the results DataFrame as an HTML object.
+        :return: String of HTML.
+        """
+        html = self.df_results.to_html()
+        return html
+
+
+def csv_to_df(filepath):
+    """
+    Open a .csv file and return it in DataFrame format.
+    :param filepath: Filepath to a .csv file to be read.
+    :return: .csv file in DataFrame format.
+    """
+    df = pd.read_csv(filepath, index_col=0)
+    return df
+
+
+def csv_to_html(filepath):
+    """
+    Open a .csv file and return it in HTML format.
+    :param filepath: Filepath to a .csv file to be read.
+    :return: String of HTML to be published.
+    """
+    df = pd.read_csv(filepath, index_col=0)
+    html = df.to_html()
+    return html
+
+
+def common_misidentified_images(list_model_results):
+    """
+    For a collection of ModelResults objects, return a list of images names that
+        were misidentified by all.
+    :param list_model_results: List of ModelResults objects.
+    :return: List of common misidentified image names.
+    """
+    misidentified_images_sets = [
+            set(model_results.misidentified_images)
+            for model_results in list_model_results
+            ]
+    common_images = set.intersection(*misidentified_images_sets)
+    return common_images
 
 
 def main():
@@ -18,23 +113,36 @@ def main():
 
     # Assemble the templates we'll use
     base_template = env.get_template("report.html")
+    summary_section_template = env.get_template("summary_section.html")
     table_section_template = env.get_template("table_section.html")
 
     # Content to be published
-    title = "Model Report"
+    title = "Model Report" 
+    vgg19_results = ModelResults("VGG19", "datasets/VGG19_results.csv")
+    mobilenet_results = ModelResults("MobileNet", "datasets/MobileNet_results.csv")
+    number_misidentified = len(
+            set(vgg19_results.misidentified_images) & set(mobilenet_results.misidentified_images)
+            )
+
     sections = list()
     sections.append(
-            table_section_template.render(
-                model="VGG19",
-                dataset="VGG19_results.csv",
-                table="Table goes here."
+            summary_section_template.render(
+                model_results_list=[vgg19_results, mobilenet_results],
+                number_misidentified=number_misidentified
                 )
             )
     sections.append(
             table_section_template.render(
-                model="MobileNet",
-                dataset="MobileNet_results.csv",
-                table="Table goes here."
+                model=vgg19_results.model_name,
+                dataset=vgg19_results.dataset,
+                table=vgg19_results.get_results_df_as_html()
+                )
+            )
+    sections.append(
+            table_section_template.render(
+                model=mobilenet_results.model_name,
+                dataset=mobilenet_results.dataset,
+                table=mobilenet_results.get_results_df_as_html()
                 )
             )
 
