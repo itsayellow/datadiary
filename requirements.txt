@@ -4,6 +4,7 @@ setuptools
 
 # pypi packages
 Jinja2
+pandas
 numpy
 matplotlib
 tensorflow
