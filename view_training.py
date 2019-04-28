@@ -9,6 +9,7 @@ import pathlib
 import sys
 
 from contextlib import redirect_stderr
+import jinja2
 import os
 with redirect_stderr(open(os.devnull, "w")):
     from keras.models import load_model
@@ -132,37 +133,25 @@ def plot_loss_acc(fig, epochs, train_data):
     return(ax1, ax2)
 
 
-def gen_data_plots(data_dir, diary_dir):
-    train_data_path = data_dir / 'train_history.json'
-    with train_data_path.open("r") as train_data_fh:
-        train_data = json.load(train_data_fh)
-    train_data['val_acc_perc'] = 100*np.array(train_data['val_acc'])
-    train_data['acc_perc'] = 100*np.array(train_data['acc'])
-
-    # find best val_loss
-    epochs = range(1, len(train_data['acc'])+1)
-    best_i = np.argmin(np.array(train_data['val_loss']))
-    best_epoch = best_i + 1
-    best_val_loss = train_data['val_loss'][best_i]
-    best_val_acc_perc = train_data['val_acc_perc'][best_i]
-    epoch_scale = max(epochs) - min(epochs)
+def gen_data_plots(data_dir, diary_dir, train_data):
     loss_scale = max(train_data['val_loss']) - min(train_data['val_loss'])
     acc_perc_scale = max(train_data['val_acc_perc']) - min(train_data['val_acc_perc'])
+    best_epoch = train_data['best_epoch']
 
     # actually plot
     fig = plt.figure(num=1, figsize=(10,5))
-    (ax1, ax2) = plot_loss_acc(fig, epochs, train_data)
+    (ax1, ax2) = plot_loss_acc(fig, train_data['epochs'], train_data)
 
     # use annotate instead of arrow because so much easier to get good results
-    ax1.annotate('best=%.1f'%best_val_loss,
-            (best_epoch, best_val_loss),
-            (best_epoch, best_val_loss + .2*loss_scale),
+    ax1.annotate('best=%.1f'%train_data['best_val_loss'],
+            (best_epoch, train_data['best_val_loss']),
+            (best_epoch, train_data['best_val_loss'] + .2*loss_scale),
             arrowprops=dict(arrowstyle="->"),
             horizontalalignment='center'
             )
-    ax2.annotate('best=%.1f'%best_val_acc_perc,
-            (best_epoch, best_val_acc_perc),
-            (best_epoch, best_val_acc_perc - .2*acc_perc_scale),
+    ax2.annotate('best=%.1f'%train_data['best_val_acc_perc'],
+            (best_epoch, train_data['best_val_acc_perc']),
+            (best_epoch, train_data['best_val_acc_perc'] - .2*acc_perc_scale),
             arrowprops=dict(arrowstyle="->"),
             horizontalalignment='center'
             )
@@ -174,17 +163,54 @@ def gen_data_plots(data_dir, diary_dir):
 def main(argv=None):
     args = process_command_line(argv)
 
-    data_dir = pathlib.Path(args.datadir)
+    job_dir = pathlib.Path(args.datadir)
+    if job_dir.name.startswith("data_"):
+        job_id = "Local Job"
+        data_dir = job_dir
+    else:
+        job_id = job_dir.name
+        data_dir = job_dir.glob('data_*')[0]
     model_name = data_dir.name.lstrip("data_")
     diary_dir = pathlib.Path(args.diarydir) / model_name
     diary_dir.mkdir(parents=True, exist_ok=True)
 
+    # extract data
+    train_data_path = data_dir / 'train_history.json'
+    with train_data_path.open("r") as train_data_fh:
+        train_data = json.load(train_data_fh)
+    train_data['val_acc_perc'] = 100*np.array(train_data['val_acc'])
+    train_data['acc_perc'] = 100*np.array(train_data['acc'])
+
+    # find best val_loss
+    train_data['epochs'] = range(1, len(train_data['acc'])+1)
+    best_i = np.argmin(np.array(train_data['val_loss']))
+    train_data['best_epoch'] = best_i + 1
+    train_data['best_val_loss'] = train_data['val_loss'][best_i]
+    train_data['best_val_acc_perc'] = train_data['val_acc_perc'][best_i]
+
     # make plot png
-    gen_data_plots(data_dir, diary_dir)
+    gen_data_plots(data_dir, diary_dir, train_data)
 
     # make model structure png
     my_model = load_model(str(data_dir / 'saved_models' / 'weights.best.hdf5'))
     plot_model(my_model, to_file=str(diary_dir / 'model.png'), show_shapes=True)
+
+    # create html report
+    env = jinja2.Environment(
+            loader=jinja2.FileSystemLoader(searchpath="templates")
+            )
+    diary_entry_template = env.get_template("diary_entry.html")
+
+    job = {}
+    job['model_name'] = model_name
+    job['job_id'] = job_id
+    job['model_diagram_img'] = 'model.png'
+    job['model_metrics_img'] = 'training_metrics.png'
+    job['best_val_acc_perc'] = '{0:.1f}'.format(train_data['best_val_acc_perc'])
+    job['best_val_acc_epoch'] = train_data['best_epoch'] 
+
+    with (diary_dir / 'report.html').open("w") as report_fh:
+        report_fh.write(diary_entry_template.render(job=job))
 
     return 0
 

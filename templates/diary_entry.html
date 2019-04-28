@@ -1,0 +1,8 @@
+<h2>{{ job['job_id'] }}</h2>
+<h3>Model {{ job['model_name'] }}</h3> 
+<img src="{{ job['model_diagram_img'] }}">
+<h3>Model Performance</h3>
+Best Validation Accuracy: {{ job['best_val_acc_perc'] }} at epoch {{ job['best_val_acc_epoch'] }}
+<p>
+<img src="{{ job['model_metrics_img'] }}">
+</p>
