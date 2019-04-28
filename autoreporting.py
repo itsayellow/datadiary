@@ -117,7 +117,7 @@ def main():
     table_section_template = env.get_template("table_section.html")
 
     # Content to be published
-    title = "Model Report" 
+    title = "Model Report"
     vgg19_results = ModelResults("VGG19", "datasets/VGG19_results.csv")
     mobilenet_results = ModelResults("MobileNet", "datasets/MobileNet_results.csv")
     number_misidentified = len(
