@@ -15,6 +15,8 @@ with redirect_stderr(open(os.devnull, "w")):
     from keras.models import load_model
     from keras.utils import plot_model
 
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -160,22 +162,16 @@ def gen_data_plots(data_dir, diary_dir, train_data):
     fig.savefig(str(diary_dir / "training_metrics.png"), bbox_inches="tight")
 
 
-def main(argv=None):
-    args = process_command_line(argv)
-
-    job_dir = pathlib.Path(args.datadir)
-    if job_dir.name.startswith("data_"):
+def proces_data_dir(data_subdir, diary_dir, model_name):
+    if data_subdir.name.startswith("data_"):
         job_id = "Local Job"
-        data_dir = job_dir
     else:
         job_id = job_dir.name
-        data_dir = job_dir.glob('data_*')[0]
-    model_name = data_dir.name.lstrip("data_")
-    diary_dir = pathlib.Path(args.diarydir) / model_name
-    diary_dir.mkdir(parents=True, exist_ok=True)
+    diary_subdir = diary_dir / model_name
+    diary_subdir.mkdir(parents=True, exist_ok=True)
 
     # extract data
-    train_data_path = data_dir / 'train_history.json'
+    train_data_path = data_subdir / 'train_history.json'
     with train_data_path.open("r") as train_data_fh:
         train_data = json.load(train_data_fh)
     train_data['val_acc_perc'] = 100*np.array(train_data['val_acc'])
@@ -189,11 +185,11 @@ def main(argv=None):
     train_data['best_val_acc_perc'] = train_data['val_acc_perc'][best_i]
 
     # make plot png
-    gen_data_plots(data_dir, diary_dir, train_data)
+    gen_data_plots(data_subdir, diary_subdir, train_data)
 
     # make model structure png
-    my_model = load_model(str(data_dir / 'saved_models' / 'weights.best.hdf5'))
-    plot_model(my_model, to_file=str(diary_dir / 'model.png'), show_shapes=True)
+    my_model = load_model(str(data_subdir / 'saved_models' / 'weights.best.hdf5'))
+    plot_model(my_model, to_file=str(diary_subdir / 'model.png'), show_shapes=True)
 
     # create html report
     env = jinja2.Environment(
@@ -209,8 +205,22 @@ def main(argv=None):
     job['best_val_acc_perc'] = '{0:.1f}'.format(train_data['best_val_acc_perc'])
     job['best_val_acc_epoch'] = train_data['best_epoch'] 
 
-    with (diary_dir / 'report.html').open("w") as report_fh:
+    with (diary_subdir / 'report.html').open("w") as report_fh:
         report_fh.write(diary_entry_template.render(job=job))
+
+
+def main(argv=None):
+    args = process_command_line(argv)
+
+    job_dir = pathlib.Path(args.datadir)
+    if job_dir.name.startswith("data_"):
+        data_subdir = job_dir
+    else:
+        data_subdir = job_dir.glob('data_*')[0]
+
+    model_name = data_subdir.name.lstrip("data_")
+    diary_dir = pathlib.Path(args.diarydir)
+    proces_data_dir(data_subdir, diary_dir, model_name)
 
     return 0
 
