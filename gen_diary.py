@@ -19,7 +19,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
-
+import PIL
 
 def process_command_line(argv):
     """Process command line invocation arguments and switches.
@@ -159,7 +159,11 @@ def gen_data_plots(data_dir, diary_dir, train_data):
             )
 
     # save and display to computer
-    fig.savefig(str(diary_dir / "training_metrics.png"), bbox_inches="tight")
+    fig.savefig(
+            str(diary_dir / "training_metrics.png"),
+            dpi=200,
+            bbox_inches="tight"
+            )
 
 
 def proces_data_dir(data_subdir, diary_dir, model_name):
@@ -197,11 +201,17 @@ def proces_data_dir(data_subdir, diary_dir, model_name):
             )
     diary_entry_template = env.get_template("diary_entry.html")
 
+    # find pixel-size of image
+    plot_img = PIL.Image.open(diary_subdir / 'training_metrics.png')
+    plot_img_size = (plot_img.size[0]/2, plot_img.size[1]/2)
+    plot_img_size_str = "width:{0[0]}px;height:{0[1]}px;".format(plot_img_size)
+
     job = {}
     job['model_name'] = model_name
     job['job_id'] = job_id
     job['model_diagram_img'] = 'model.png'
     job['model_metrics_img'] = 'training_metrics.png'
+    job['model_metrics_img_style'] = plot_img_size_str
     job['best_val_acc_perc'] = '{0:.1f}'.format(train_data['best_val_acc_perc'])
     job['best_val_acc_epoch'] = train_data['best_epoch'] 
 

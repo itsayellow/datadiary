@@ -1,8 +1,24 @@
-<h2>{{ job['job_id'] }}</h2>
-<h3>Model {{ job['model_name'] }}</h3> 
-<img src="{{ job['model_diagram_img'] }}">
-<h3>Model Performance</h3>
-Best Validation Accuracy: {{ job['best_val_acc_perc'] }} at epoch {{ job['best_val_acc_epoch'] }}
-<p>
-<img src="{{ job['model_metrics_img'] }}">
-</p>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title }}</title>
+</head>
+
+<body>
+    <h1>{{ job['job_id'] }}</h1>
+
+    <h2>Model: {{ job['model_name'] }}</h2> 
+    <img src="{{ job['model_diagram_img'] }}">
+
+    <h2>Model Performance</h2>
+    Best Validation Accuracy: {{ job['best_val_acc_perc'] }}
+    at epoch {{ job['best_val_acc_epoch'] }}
+
+    <p>
+    <img src="{{ job['model_metrics_img'] }}" style="{{ job['model_metrics_img_style'] }}">
+    </p>
+</body>
+
+</html>

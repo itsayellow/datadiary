@@ -10,6 +10,7 @@ matplotlib
 tensorflow
 keras
 pydot
+Pillow
 
 # my package(s)
 #git+https://github.com/itsayellow/tictoc.git
