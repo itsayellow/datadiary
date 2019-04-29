@@ -98,27 +98,6 @@ def plot_acc(ax, epochs, data_dict):
     ax.grid()
 
 
-def pyplot_quick_dirty(train_data):
-    epochs = range(1, len(train_data['loss'])+1)
-    plt.figure(num=1, figsize=(10,5))
-
-    plt.subplot(121)
-    plt.plot(epochs, train_data['loss'], label='loss')
-    plt.plot(epochs, train_data['val_loss'], label='val_loss')
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
-    plt.legend()
-    plt.grid()
-
-    plt.subplot(122)
-    plt.plot(epochs, 100*np.array(train_data['acc']), label='acc')
-    plt.plot(epochs, 100*np.array(train_data['val_acc']), label='val_acc')
-    plt.xlabel('Epoch')
-    plt.ylabel('Accuracy (%)')
-    plt.legend()
-    plt.grid()
-
-
 def plot_loss_acc(fig, epochs, train_data):
     plt.subplots_adjust(
             left=0.08,
