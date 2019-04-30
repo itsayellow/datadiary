@@ -1,0 +1,13 @@
+<h2>{{ job['job_id'] }}</h2>
+<h3>Model: {{ job['model_name'] }}</h3> 
+<p>
+Best Validation Loss: Accuracy {{ job['best_val_acc_perc'] }}%
+at epoch {{ job['best_val_acc_epoch'] }}
+</p>
+<p>
+<a href="{{ report_path }}">Full report</a>
+</p>
+<p>
+<img src="{{ job['model_diagram_img'] }}" style="{{ job['model_diagram_img_style'] }}">
+<img src="{{ job['model_metrics_img'] }}" style="{{ job['model_metrics_img_style'] }}">
+</p>

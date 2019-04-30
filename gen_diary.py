@@ -96,6 +96,7 @@ def plot_acc(ax, epochs, data_dict):
             data_dict.get('val_acc_perc', [])
             )
     ax.grid()
+    ax.set_ylim(0, 100)
 
 
 def plot_loss_acc(fig, epochs, train_data):
@@ -115,24 +116,24 @@ def plot_loss_acc(fig, epochs, train_data):
 
 
 def gen_data_plots(data_dir, diary_dir, train_data):
-    loss_scale = max(train_data['val_loss']) - min(train_data['val_loss'])
-    acc_perc_scale = max(train_data['val_acc_perc']) - min(train_data['val_acc_perc'])
     best_epoch = train_data['best_epoch']
 
     # actually plot
-    fig = plt.figure(num=1, figsize=(10,5))
+    fig = plt.figure(figsize=(10,5))
     (ax1, ax2) = plot_loss_acc(fig, train_data['epochs'], train_data)
 
     # use annotate instead of arrow because so much easier to get good results
+    ax1_scale = ax1.get_ylim()[1] - ax1.get_ylim()[0]
     ax1.annotate('best=%.1f'%train_data['best_val_loss'],
             (best_epoch, train_data['best_val_loss']),
-            (best_epoch, train_data['best_val_loss'] + .2*loss_scale),
+            (best_epoch, train_data['best_val_loss'] + .2*ax1_scale),
             arrowprops=dict(arrowstyle="->"),
             horizontalalignment='center'
             )
+    ax2_scale = ax2.get_ylim()[1] - ax2.get_ylim()[0]
     ax2.annotate('best=%.1f'%train_data['best_val_acc_perc'],
             (best_epoch, train_data['best_val_acc_perc']),
-            (best_epoch, train_data['best_val_acc_perc'] - .2*acc_perc_scale),
+            (best_epoch, train_data['best_val_acc_perc'] - .2*ax2_scale),
             arrowprops=dict(arrowstyle="->"),
             horizontalalignment='center'
             )
@@ -145,7 +146,7 @@ def gen_data_plots(data_dir, diary_dir, train_data):
             )
 
 
-def proces_data_dir(data_subdir, diary_dir, model_name):
+def process_data_dir(data_subdir, diary_dir, model_name):
     if data_subdir.name.startswith("data_"):
         job_id = "Local Job"
     else:
@@ -192,13 +193,14 @@ def proces_data_dir(data_subdir, diary_dir, model_name):
             loader=jinja2.FileSystemLoader(searchpath="templates")
             )
     diary_entry_template = env.get_template("diary_entry.html")
+    diary_section_template = env.get_template("diary_section.html")
 
     # find pixel-size of images
     plot_img = PIL.Image.open(diary_subdir / 'training_metrics.png')
-    plot_img_size = (plot_img.size[0]/2, plot_img.size[1]/2)
+    plot_img_size = [int(x/2) for x in plot_img.size]
     plot_img_size_str = "width:{0[0]}px;height:{0[1]}px;".format(plot_img_size)
     model_img = PIL.Image.open(diary_subdir / 'model.png')
-    model_img_size = (model_img.size[0]/2, model_img.size[1]/2)
+    model_img_size = [int(x/2) for x in model_img.size]
     model_img_size_str = "width:{0[0]}px;height:{0[1]}px;".format(model_img_size)
 
     job = {}
@@ -211,22 +213,60 @@ def proces_data_dir(data_subdir, diary_dir, model_name):
     job['best_val_acc_perc'] = '{0:.1f}'.format(train_data['best_val_acc_perc'])
     job['best_val_acc_epoch'] = train_data['best_epoch'] 
 
-    with (diary_subdir / 'report.html').open("w") as report_fh:
+    report_path = diary_subdir / 'report.html'
+    with report_path.open("w") as report_fh:
         report_fh.write(diary_entry_template.render(job=job))
 
+    # convert all paths to relative to diary_dir
+    job['model_diagram_img'] = (diary_subdir / 'model.png').relative_to(diary_dir)
+    job['model_metrics_img'] = (diary_subdir / 'training_metrics.png').relative_to(diary_dir)
+    
+    # downsize images for closer to thumbnail size
+    model_img_size = [int(x/2) for x in model_img_size]
+    model_img_size_str = "width:{0[0]}px;height:{0[1]}px;".format(model_img_size)
+    plot_img_size = [int(x/2) for x in plot_img_size]
+    plot_img_size_str = "width:{0[0]}px;height:{0[1]}px;".format(plot_img_size)
+    job['model_diagram_img_style'] = model_img_size_str
+    job['model_metrics_img_style'] = plot_img_size_str
 
-def main(argv=None):
-    args = process_command_line(argv)
+    report_path = report_path.relative_to(diary_dir)
+    section = diary_section_template.render(
+            job=job, report_path=report_path
+            )
+    return section
 
-    job_dir = pathlib.Path(args.datadir)
+
+def process_dir(job_dir, diary_dir):
     if job_dir.name.startswith("data_"):
         data_subdir = job_dir
     else:
         data_subdir = job_dir.glob('data_*')[0]
 
     model_name = data_subdir.name.lstrip("data_")
+    section = process_data_dir(data_subdir, diary_dir, model_name)
+    return section
+
+def main(argv=None):
+    args = process_command_line(argv)
+    data_dir = pathlib.Path(args.datadir)
     diary_dir = pathlib.Path(args.diarydir)
-    proces_data_dir(data_subdir, diary_dir, model_name)
+    sections = []
+    for job_dir in [x for x in data_dir.iterdir() if x.is_dir()]:
+        sections.append(process_dir(job_dir, diary_dir))
+
+    # create html report
+    env = jinja2.Environment(
+            loader=jinja2.FileSystemLoader(searchpath="templates")
+            )
+    diary_index_template = env.get_template("diary.html")
+    master_diary = diary_dir / 'index.html'
+    with master_diary.open("w") as master_diary_fh:
+        master_diary_fh.write(
+                diary_index_template.render(
+                    title='Data Diary',
+                    sections=sections
+                    )
+                )
 
     return 0
 

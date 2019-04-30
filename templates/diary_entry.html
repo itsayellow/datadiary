@@ -13,8 +13,10 @@
     <img src="{{ job['model_diagram_img'] }}" style="{{ job['model_diagram_img_style'] }}">
 
     <h2>Model Performance</h2>
-    Best Validation Accuracy: {{ job['best_val_acc_perc'] }}
+    <p>
+    Best Validation Loss: Accuracy {{ job['best_val_acc_perc'] }}%
     at epoch {{ job['best_val_acc_epoch'] }}
+    </p>
 
     <p>
     <img src="{{ job['model_metrics_img'] }}" style="{{ job['model_metrics_img_style'] }}">
