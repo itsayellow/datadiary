@@ -10,7 +10,7 @@
     <h1>{{ job['job_id'] }}</h1>
 
     <h2>Model: {{ job['model_name'] }}</h2> 
-    <img src="{{ job['model_diagram_img'] }}">
+    <img src="{{ job['model_diagram_img'] }}" style="{{ job['model_diagram_img_style'] }}">
 
     <h2>Model Performance</h2>
     Best Validation Accuracy: {{ job['best_val_acc_perc'] }}

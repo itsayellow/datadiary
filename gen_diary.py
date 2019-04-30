@@ -172,7 +172,20 @@ def proces_data_dir(data_subdir, diary_dir, model_name):
 
     # make model structure png
     my_model = load_model(str(data_subdir / 'saved_models' / 'weights.best.hdf5'))
-    plot_model(my_model, to_file=str(diary_subdir / 'model.png'), show_shapes=True)
+    # keras is using dpi=96 and PIL is using dpi=72, thus PIL rasterizes
+    #   keras eps to 3/4 the size keras png
+    # We multiply by 16/6 to get 2x size png for detail on retina screens
+    # PIL resize allows us to anti-alias (PIL doesn't antialias rasterizing.)
+    plot_model(
+            my_model,
+            to_file=str(diary_subdir / 'model.eps'),
+            show_shapes=True
+            )
+    eps_model = PIL.Image.open(diary_subdir / 'model.eps')
+    eps_model.load(scale=16)
+    new_size = (int(eps_model.size[0]/6), int(eps_model.size[1]/6))
+    eps_model = eps_model.resize(new_size, PIL.Image.LANCZOS)
+    eps_model.save(diary_subdir / 'model.png')
 
     # create html report
     env = jinja2.Environment(
@@ -180,15 +193,19 @@ def proces_data_dir(data_subdir, diary_dir, model_name):
             )
     diary_entry_template = env.get_template("diary_entry.html")
 
-    # find pixel-size of image
+    # find pixel-size of images
     plot_img = PIL.Image.open(diary_subdir / 'training_metrics.png')
     plot_img_size = (plot_img.size[0]/2, plot_img.size[1]/2)
     plot_img_size_str = "width:{0[0]}px;height:{0[1]}px;".format(plot_img_size)
+    model_img = PIL.Image.open(diary_subdir / 'model.png')
+    model_img_size = (model_img.size[0]/2, model_img.size[1]/2)
+    model_img_size_str = "width:{0[0]}px;height:{0[1]}px;".format(model_img_size)
 
     job = {}
     job['model_name'] = model_name
     job['job_id'] = job_id
     job['model_diagram_img'] = 'model.png'
+    job['model_diagram_img_style'] = model_img_size_str
     job['model_metrics_img'] = 'training_metrics.png'
     job['model_metrics_img_style'] = plot_img_size_str
     job['best_val_acc_perc'] = '{0:.1f}'.format(train_data['best_val_acc_perc'])
