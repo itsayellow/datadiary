@@ -82,7 +82,7 @@ def plot_vs_epoch(ax, epochs, train=None, val=None, do_legend=True):
         ax.legend()
 
 
-def plot_loss(ax, epochs, data_dict):
+def plot_loss(ax, epochs, data_dict, overall_max_loss):
     # ax belongs to fig
     ax.set_title("Loss During Training")
     ax.set_xlabel("Epoch")
@@ -94,6 +94,7 @@ def plot_loss(ax, epochs, data_dict):
             data_dict.get('val_loss', [])
             )
     ax.grid()
+    ax.set_ylim(0, overall_max_loss)
 
 
 def plot_acc(ax, epochs, data_dict):
@@ -111,7 +112,7 @@ def plot_acc(ax, epochs, data_dict):
     ax.set_ylim(0, 100)
 
 
-def plot_loss_acc(fig, epochs, train_data):
+def plot_loss_acc(fig, epochs, train_data, overall_max_loss):
     plt.subplots_adjust(
             left=0.08,
             bottom=None,
@@ -121,18 +122,18 @@ def plot_loss_acc(fig, epochs, train_data):
             hspace=None,
             )
     ax1 = fig.add_subplot(121)
-    plot_loss(ax1, epochs, train_data)
+    plot_loss(ax1, epochs, train_data, overall_max_loss)
     ax2 = fig.add_subplot(122)
     plot_acc(ax2, epochs, train_data)
     return(ax1, ax2)
 
 
-def gen_data_plots(data_dir, diary_dir, train_data):
+def gen_data_plots(data_dir, diary_dir, train_data, overall_max_loss):
     best_epoch = train_data['best_epoch']
 
     # actually plot
     fig = plt.figure(figsize=(10,5))
-    (ax1, ax2) = plot_loss_acc(fig, train_data['epochs'], train_data)
+    (ax1, ax2) = plot_loss_acc(fig, train_data['epochs'], train_data, overall_max_loss)
 
     # use annotate instead of arrow because so much easier to get good results
     ax1_scale = ax1.get_ylim()[1] - ax1.get_ylim()[0]
@@ -158,7 +159,7 @@ def gen_data_plots(data_dir, diary_dir, train_data):
             )
 
 
-def process_data_dir(data_subdir, diary_dir, model_name):
+def process_data_dir(data_subdir, diary_dir, model_name, overall_max_loss):
     if data_subdir.name.startswith("data_"):
         job_id = "Local Job"
     else:
@@ -181,7 +182,7 @@ def process_data_dir(data_subdir, diary_dir, model_name):
     train_data['best_val_acc_perc'] = train_data['val_acc_perc'][best_i]
 
     # make plot png
-    gen_data_plots(data_subdir, diary_subdir, train_data)
+    gen_data_plots(data_subdir, diary_subdir, train_data, overall_max_loss)
 
     # make model structure png
     my_model = load_model(str(data_subdir / 'saved_models' / 'weights.best.hdf5'))
@@ -248,30 +249,93 @@ def process_data_dir(data_subdir, diary_dir, model_name):
     return section
 
 
-def process_dir(job_dir, diary_dir):
+def process_dir(job_dir, diary_dir, overall_max_loss):
     if job_dir.name.startswith("data_"):
         data_subdir = job_dir
     else:
         data_subdir = job_dir.glob('data_*')[0]
 
     model_name = data_subdir.name.lstrip("data_")
-    section = process_data_dir(data_subdir, diary_dir, model_name)
+    section = process_data_dir(data_subdir, diary_dir, model_name, overall_max_loss)
     return section
 
 
+def catalog_dir(data_subdir):
+    if data_subdir.name.startswith("data_"):
+        job_name = "Local Job"
+        datadir = data_subdir
+    else:
+        job_name = data_subdir.name
+        try:
+            datadir = data_subdir.glob('data_*')[0]
+        except IndexError:
+            return None
+
+    model_name = data_subdir.name.lstrip("data_")
+
+    # extract data
+    train_data_path = data_subdir / 'train_history.json'
+    with train_data_path.open("r") as train_data_fh:
+        train_data = json.load(train_data_fh)
+    train_data['epochs'] = range(1, len(train_data['acc'])+1)
+
+    # convert data to numpy arrays
+    for varname in train_data:
+        train_data[varname] = np.array(train_data[varname])
+
+    train_data['val_acc_perc'] = 100*train_data['val_acc']
+    train_data['acc_perc'] = 100*train_data['acc']
+
+    # find bests and maxs
+    best_i = np.argmin(train_data['val_loss'])
+    train_data['best_epoch'] = train_data['epochs'][best_i]
+    train_data['best_val_loss'] = train_data['val_loss'][best_i]
+    train_data['best_val_acc_perc'] = train_data['val_acc_perc'][best_i]
+
+    train_data['max_loss'] = np.max(
+            np.stack((train_data['val_loss'], train_data['loss']))
+            )
+    train_data['max_acc_perc'] = np.max(
+            np.stack((train_data['val_acc_perc'], train_data['acc_perc']))
+            )
+    train_data['max_epoch'] = np.max(train_data['epochs'])
+
+    return {'datadir':datadir, 'model_name':model_name, 'train_data':train_data}
+
+
 def catalog_all_dirs(data_dir):
-    # TODO: find max loss over all datasets, so we can adjust all
+    # Find max loss over all datasets, so we can adjust all
     #   loss plots from 0 to max loss (consistent ylim for all plots)
-    pass
+    data_dir_catalog = []
+    for data_subdir in [x for x in data_dir.iterdir() if x.is_dir()]:
+        data_subdir_data = catalog_dir(data_subdir)
+        if data_subdir_data is not None:
+            data_dir_catalog.append(data_subdir_data)
+    return data_dir_catalog
 
 
 def main(argv=None):
     args = process_command_line(argv)
     data_dir = pathlib.Path(args.datadir)
     diary_dir = pathlib.Path(args.diarydir)
+
+    data_dir_catalog = catalog_all_dirs(data_dir)
+    # DEBUG
+    for data_dir_info in data_dir_catalog:
+        print(data_dir_info['datadir'])
+        print(data_dir_info['train_data'])
+
+    overall_max_loss = 0
+    overall_max_perc = 0
+    for catalog_item in data_dir_catalog:
+        overall_max_loss = max(overall_max_loss, catalog_item['train_data']['max_loss'])
+        overall_max_acc_perc = max(overall_max_perc, catalog_item['train_data']['max_acc_perc'])
+    print("overall_max_loss={0}".format(overall_max_loss))
+    print("overall_max_acc_perc={0}".format(overall_max_acc_perc))
+
     sections = []
     for job_dir in [x for x in data_dir.iterdir() if x.is_dir()]:
-        sections.append(process_dir(job_dir, diary_dir))
+        sections.append(process_dir(job_dir, diary_dir, overall_max_loss))
 
     # create html report
     env = jinja2.Environment(
