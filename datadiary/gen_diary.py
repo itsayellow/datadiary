@@ -2,6 +2,11 @@
 #
 # Post-training view of loss, accuracy metrics
 
+# Jinja2 tutorial:
+# https://dev.to/goyder/automatic-reporting-in-python---part-1-from-planning-to-hello-world-32n1
+# https://dev.to/goyder/automatic-reporting-in-python---part-2-from-hello-world-to-real-insights-8p3
+# https://dev.to/goyder/automatic-reporting-in-python---part-3-packaging-it-up-1185
+
 
 import argparse
 import json
@@ -20,6 +25,10 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import PIL
+
+
+TEMPLATE_SEARCH_PATH = [pathlib.Path(__file__).parent / 'templates']
+
 
 def process_command_line(argv):
     """Process command line invocation arguments and switches.
@@ -190,7 +199,7 @@ def process_data_dir(data_subdir, diary_dir, model_name):
 
     # create html report
     env = jinja2.Environment(
-            loader=jinja2.FileSystemLoader(searchpath="templates")
+            loader=jinja2.FileSystemLoader(searchpath=TEMPLATE_SEARCH_PATH)
             )
     diary_entry_template = env.get_template("diary_entry.html")
     diary_section_template = env.get_template("diary_section.html")
@@ -256,7 +265,7 @@ def main(argv=None):
 
     # create html report
     env = jinja2.Environment(
-            loader=jinja2.FileSystemLoader(searchpath="templates")
+            loader=jinja2.FileSystemLoader(searchpath=TEMPLATE_SEARCH_PATH)
             )
     diary_index_template = env.get_template("diary.html")
     master_diary = diary_dir / 'index.html'
