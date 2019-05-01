@@ -16,6 +16,9 @@ import sys
 from contextlib import redirect_stderr
 import jinja2
 import os
+# Mute Tensorflow chatter messages ('1' means filter out INFO messages.)
+os.environ['TF_CPP_MIN_LOG_LEVEL']='1'
+# Mute Keras chatter messages
 with redirect_stderr(open(os.devnull, "w")):
     from keras.models import load_model
     from keras.utils import plot_model
@@ -254,6 +257,7 @@ def process_dir(job_dir, diary_dir):
     model_name = data_subdir.name.lstrip("data_")
     section = process_data_dir(data_subdir, diary_dir, model_name)
     return section
+
 
 def main(argv=None):
     args = process_command_line(argv)
