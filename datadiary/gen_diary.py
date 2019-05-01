@@ -31,7 +31,9 @@ import PIL
 
 
 TEMPLATE_SEARCH_PATH = [pathlib.Path(__file__).parent / 'templates']
-
+JINJA_ENV = jinja2.Environment(
+        loader=jinja2.FileSystemLoader(searchpath=TEMPLATE_SEARCH_PATH)
+        )
 
 def process_command_line(argv):
     """Process command line invocation arguments and switches.
@@ -112,7 +114,7 @@ def plot_acc(ax, epochs, data_dict):
     ax.set_ylim(0, 100)
 
 
-def plot_loss_acc(fig, epochs, train_data, overall_max_loss):
+def plot_loss_acc(fig, epochs, train_data, global_data):
     plt.subplots_adjust(
             left=0.08,
             bottom=None,
@@ -122,18 +124,18 @@ def plot_loss_acc(fig, epochs, train_data, overall_max_loss):
             hspace=None,
             )
     ax1 = fig.add_subplot(121)
-    plot_loss(ax1, epochs, train_data, overall_max_loss)
+    plot_loss(ax1, epochs, train_data, global_data['max_loss'])
     ax2 = fig.add_subplot(122)
     plot_acc(ax2, epochs, train_data)
     return(ax1, ax2)
 
 
-def gen_data_plots(data_dir, diary_dir, train_data, overall_max_loss):
+def gen_data_plots(data_dir, diary_dir, train_data, global_data):
     best_epoch = train_data['best_epoch']
 
     # actually plot
     fig = plt.figure(figsize=(10,5))
-    (ax1, ax2) = plot_loss_acc(fig, train_data['epochs'], train_data, overall_max_loss)
+    (ax1, ax2) = plot_loss_acc(fig, train_data['epochs'], train_data, global_data)
 
     # use annotate instead of arrow because so much easier to get good results
     ax1_scale = ax1.get_ylim()[1] - ax1.get_ylim()[0]
@@ -159,7 +161,7 @@ def gen_data_plots(data_dir, diary_dir, train_data, overall_max_loss):
             )
 
 
-def process_data_dir(data_subdir, diary_dir, model_name, overall_max_loss):
+def process_data_dir(data_subdir, diary_dir, model_name, global_data):
     if data_subdir.name.startswith("data_"):
         job_id = "Local Job"
     else:
@@ -182,7 +184,7 @@ def process_data_dir(data_subdir, diary_dir, model_name, overall_max_loss):
     train_data['best_val_acc_perc'] = train_data['val_acc_perc'][best_i]
 
     # make plot png
-    gen_data_plots(data_subdir, diary_subdir, train_data, overall_max_loss)
+    gen_data_plots(data_subdir, diary_subdir, train_data, global_data)
 
     # make model structure png
     my_model = load_model(str(data_subdir / 'saved_models' / 'weights.best.hdf5'))
@@ -202,11 +204,8 @@ def process_data_dir(data_subdir, diary_dir, model_name, overall_max_loss):
     eps_model.save(diary_subdir / 'model.png')
 
     # create html report
-    env = jinja2.Environment(
-            loader=jinja2.FileSystemLoader(searchpath=TEMPLATE_SEARCH_PATH)
-            )
-    diary_entry_template = env.get_template("diary_entry.html")
-    diary_section_template = env.get_template("diary_section.html")
+    diary_entry_template = JINJA_ENV.get_template("diary_entry.html")
+    diary_section_template = JINJA_ENV.get_template("diary_section.html")
 
     # find pixel-size of images
     plot_img = PIL.Image.open(diary_subdir / 'training_metrics.png')
@@ -246,17 +245,6 @@ def process_data_dir(data_subdir, diary_dir, model_name, overall_max_loss):
     section = diary_section_template.render(
             job=job, report_path=report_path
             )
-    return section
-
-
-def process_dir(job_dir, diary_dir, overall_max_loss):
-    if job_dir.name.startswith("data_"):
-        data_subdir = job_dir
-    else:
-        data_subdir = job_dir.glob('data_*')[0]
-
-    model_name = data_subdir.name.lstrip("data_")
-    section = process_data_dir(data_subdir, diary_dir, model_name, overall_max_loss)
     return section
 
 
@@ -342,14 +330,18 @@ def main(argv=None):
     print(global_data)
 
     sections = []
-    for job_dir in [x for x in data_dir.iterdir() if x.is_dir()]:
-        sections.append(process_dir(job_dir, diary_dir, global_data['max_loss']))
+    for experiment in data_dir_catalog:
+        sections.append(
+                process_data_dir(
+                    experiment['datadir'],
+                    diary_dir,
+                    experiment['model_name'],
+                    global_data
+                    )
+                )
 
     # create html report
-    env = jinja2.Environment(
-            loader=jinja2.FileSystemLoader(searchpath=TEMPLATE_SEARCH_PATH)
-            )
-    diary_index_template = env.get_template("diary.html")
+    diary_index_template = JINJA_ENV.get_template("diary.html")
     master_diary = diary_dir / 'index.html'
     with master_diary.open("w") as master_diary_fh:
         master_diary_fh.write(
