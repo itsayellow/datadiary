@@ -19,8 +19,7 @@ setup(
             'Programming Language :: Python :: 3'
             ],
         keywords='report',
-        include_package_data=True,
-        #packages=find_packages('datadiary'),
+        include_package_data=True,# so we get html files in datadiary/templates
         packages=[
             'datadiary'
             ],
