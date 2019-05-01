@@ -12,6 +12,12 @@ Installation
 
      pipx install --spec git/datadiary datadiary
 
+* For local editable installation:
+
+  .. code:: bash
+
+     pipx install -e --spec git/datadiary datadiary
+
 * Install directly from git
 
   .. code:: bash
