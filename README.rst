@@ -1,7 +1,7 @@
 datadiary
 =========
 
-Summarize Machine Learning experiment results in a html tree.
+Summarize Machine Learning experiment results in an html tree.
 
 Installation
 ------------
