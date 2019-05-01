@@ -1,17 +1,10 @@
-#!/usr/bin/env python3
-
-
 import sys
 
 import datadiary
 
-
-def main(argv):
-    return datadiary.main(argv)
-
-if __name__ == "__main__":
+def main():
     try:
-        status = main(sys.argv)
+        status = datadiary.main(sys.argv)
     except KeyboardInterrupt:
         # Make a very clean exit (no debug info) if user breaks with Ctrl-C
         print("Stopped by Keyboard Interrupt", file=sys.stderr)

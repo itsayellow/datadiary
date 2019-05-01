@@ -34,8 +34,10 @@ setup(
             'pydot',
             'Pillow',
             ],
-        scripts=[
-            'bin/diarygen',
-            ],
+        entry_points={
+            'console_scripts':[
+                'diarygen=datadiary.command_line:main'
+                ]
+            },
         #python_requires='>=3',
         )
