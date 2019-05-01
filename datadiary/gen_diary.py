@@ -306,12 +306,31 @@ def catalog_dir(data_subdir):
 def catalog_all_dirs(data_dir):
     # Find max loss over all datasets, so we can adjust all
     #   loss plots from 0 to max loss (consistent ylim for all plots)
+    global_data = {}
     data_dir_catalog = []
     for data_subdir in [x for x in data_dir.iterdir() if x.is_dir()]:
         data_subdir_data = catalog_dir(data_subdir)
-        if data_subdir_data is not None:
-            data_dir_catalog.append(data_subdir_data)
-    return data_dir_catalog
+        if data_subdir_data is None:
+            continue
+        data_dir_catalog.append(data_subdir_data)
+        global_data['max_loss'] = max(
+                global_data.get('max_loss', 0),
+                data_subdir_data['train_data']['max_loss']
+                )
+        if data_subdir_data['train_data']['max_acc_perc'] > global_data.get('max_acc_perc', 0):
+            global_data['model_max_acc_perc'] = data_subdir_data['model_name']
+        global_data['max_acc_perc'] = max(
+                global_data.get('max_acc_perc', 0),
+                data_subdir_data['train_data']['max_acc_perc']
+                )
+        if data_subdir_data['train_data']['best_epoch'] < global_data.get('min_best_epoch', 0):
+            global_data['model_min_best_epoch'] = data_subdir_data['model_name']
+        global_data['min_best_epoch'] = min(
+                global_data.get('min_best_epoch', 1e6),
+                data_subdir_data['train_data']['best_epoch']
+                )
+
+    return (data_dir_catalog, global_data)
 
 
 def main(argv=None):
@@ -319,23 +338,12 @@ def main(argv=None):
     data_dir = pathlib.Path(args.datadir)
     diary_dir = pathlib.Path(args.diarydir)
 
-    data_dir_catalog = catalog_all_dirs(data_dir)
-    # DEBUG
-    for data_dir_info in data_dir_catalog:
-        print(data_dir_info['datadir'])
-        print(data_dir_info['train_data'])
-
-    overall_max_loss = 0
-    overall_max_perc = 0
-    for catalog_item in data_dir_catalog:
-        overall_max_loss = max(overall_max_loss, catalog_item['train_data']['max_loss'])
-        overall_max_acc_perc = max(overall_max_perc, catalog_item['train_data']['max_acc_perc'])
-    print("overall_max_loss={0}".format(overall_max_loss))
-    print("overall_max_acc_perc={0}".format(overall_max_acc_perc))
+    (data_dir_catalog, global_data) = catalog_all_dirs(data_dir)
+    print(global_data)
 
     sections = []
     for job_dir in [x for x in data_dir.iterdir() if x.is_dir()]:
-        sections.append(process_dir(job_dir, diary_dir, overall_max_loss))
+        sections.append(process_dir(job_dir, diary_dir, global_data['max_loss']))
 
     # create html report
     env = jinja2.Environment(
