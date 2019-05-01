@@ -259,6 +259,12 @@ def process_dir(job_dir, diary_dir):
     return section
 
 
+def catalog_all_dirs(data_dir):
+    # TODO: find max loss over all datasets, so we can adjust all
+    #   loss plots from 0 to max loss (consistent ylim for all plots)
+    pass
+
+
 def main(argv=None):
     args = process_command_line(argv)
     data_dir = pathlib.Path(args.datadir)
