@@ -50,7 +50,7 @@ def process_command_line(argv):
 
     # required arguments
     parser.add_argument('datadir',
-            help="Directory containing train_history.json."
+            help="Directory containing all experiment data subdirectories."
             )
     parser.add_argument('diarydir',
             help="Directory for output diary entries."
