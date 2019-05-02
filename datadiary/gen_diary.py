@@ -182,6 +182,14 @@ def gen_experiment_html(diary_dir, experiment, global_data):
         best_weights_file = list((data_subdir / 'saved_models').glob('*.hdf5'))[0]
     my_model = load_model(str(best_weights_file))
 
+    # get optimizer info
+    model_opt_name = my_model.optimizer.__class__.__module__ + \
+            "." + my_model.optimizer.__class__.__name__
+    model_opt_config = my_model.optimizer.get_config()
+    model_opt_config_fmt = [
+            "{0}: {1:.3g}".format(x, model_opt_config[x]) for x in model_opt_config
+            ]
+
     # keras is using dpi=96 and PIL is using dpi=72, thus PIL rasterizes
     #   keras eps to 3/4 the size keras png
     # We multiply by 16/6 to get 2x size png for detail on retina screens
@@ -218,7 +226,9 @@ def gen_experiment_html(diary_dir, experiment, global_data):
     job['model_metrics_img'] = 'training_metrics.png'
     job['model_metrics_img_style'] = plot_img_size_str
     job['best_val_acc_perc'] = '{0:.1f}'.format(train_data['best_val_acc_perc'])
-    job['best_val_acc_epoch'] = train_data['best_epoch'] 
+    job['best_val_acc_epoch'] = train_data['best_epoch']
+    job['model_optimizer_name'] = model_opt_name
+    job['model_optimizer_config'] = model_opt_config_fmt
 
     report_path = diary_subdir / 'report.html'
     with report_path.open("w") as report_fh:
@@ -227,7 +237,7 @@ def gen_experiment_html(diary_dir, experiment, global_data):
     # convert all paths to relative to diary_dir
     job['model_diagram_img'] = (diary_subdir / 'model.png').relative_to(diary_dir)
     job['model_metrics_img'] = (diary_subdir / 'training_metrics.png').relative_to(diary_dir)
-    
+
     # downsize images for closer to thumbnail size
     model_img_size = [int(x/2) for x in model_img_size]
     model_img_size_str = "width:{0[0]}px;height:{0[1]}px;".format(model_img_size)
@@ -330,7 +340,7 @@ def main(argv=None):
 
     print("Rendering HTML summaries of all jobs...")
     sections = []
-    for experiment in tqdm.tqdm(experiments, leave=False):
+    for experiment in tqdm.tqdm(experiments, leave=False, unit='job'):
         sections.append(gen_experiment_html(diary_dir, experiment, global_data))
 
     # create summaries
