@@ -161,7 +161,11 @@ def gen_data_plots(data_dir, diary_dir, train_data, global_data):
             )
 
 
-def gen_experiment_html(data_subdir, diary_dir, train_data, experiment_info, global_data):
+def gen_experiment_html(diary_dir, experiment, global_data):
+    data_subdir = experiment['info']['datadir']
+    train_data = experiment['train_data']
+    experiment_info = experiment['info']
+
     model_name = experiment_info['model_name']
     job_id = experiment_info['job_id']
 
@@ -276,8 +280,10 @@ def catalog_dir(data_subdir):
     experiment_info = {}
     experiment_info['model_name'] = model_name
     experiment_info['job_id'] = job_name
+    experiment_info['datadir'] = datadir
+    experiment_info['topdir'] = data_subdir
 
-    return {'datadir':datadir, 'experiment_info':experiment_info, 'train_data':train_data}
+    return {'info':experiment_info, 'train_data':train_data}
 
 
 def catalog_all_dirs(data_dir):
@@ -294,14 +300,10 @@ def catalog_all_dirs(data_dir):
                 global_data.get('max_loss', 0),
                 data_subdir_data['train_data']['max_loss']
                 )
-        if data_subdir_data['train_data']['max_acc_perc'] > global_data.get('max_acc_perc', 0):
-            global_data['model_max_acc_perc'] = data_subdir_data['experiment_info']['model_name']
         global_data['max_acc_perc'] = max(
                 global_data.get('max_acc_perc', 0),
                 data_subdir_data['train_data']['max_acc_perc']
                 )
-        if data_subdir_data['train_data']['best_epoch'] < global_data.get('min_best_epoch', 0):
-            global_data['model_min_best_epoch'] = data_subdir_data['experiment_info']['model_name']
         global_data['min_best_epoch'] = min(
                 global_data.get('min_best_epoch', 1e6),
                 data_subdir_data['train_data']['best_epoch']
@@ -319,15 +321,7 @@ def main(argv=None):
 
     sections = []
     for experiment in experiments:
-        sections.append(
-                gen_experiment_html(
-                    experiment['datadir'],
-                    diary_dir,
-                    experiment['train_data'],
-                    experiment['experiment_info'],
-                    global_data
-                    )
-                )
+        sections.append(gen_experiment_html(diary_dir, experiment, global_data))
 
     # create summaries
     summaries = []
@@ -340,7 +334,7 @@ def main(argv=None):
             )
     expts_val_acc_out = [
             {
-                'name':x['experiment_info']['model_name'],
+                'name':x['info']['model_name'],
                 'criteria_value':"{0:.1f}%".format(x['train_data']['best_val_acc_perc'])
                 }
             for x in expts_val_acc_ranked
@@ -359,7 +353,7 @@ def main(argv=None):
             )
     expts_epoch_out = [
             {
-                'name':x['experiment_info']['model_name'],
+                'name':x['info']['model_name'],
                 'criteria_value':"Epoch {0}".format(x['train_data']['best_epoch'])
                 }
             for x in expts_epoch_ranked
