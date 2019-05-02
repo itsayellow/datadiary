@@ -6,8 +6,16 @@
 </head>
 <body>
 <h1>{{ title }}</h1>
-{% for section in sections %}
-    {{ section }}
+
+<h2>Summary and Rankings</h2>
+{% for summary in summaries %}
+    {{ summary }}
 {% endfor %}
+
+<h2>All Experiments</h2>
+{% for experiment in experiments %}
+    {{ experiment }}
+{% endfor %}
+
 </body>
 </html>

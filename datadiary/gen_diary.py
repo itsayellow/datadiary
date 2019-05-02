@@ -205,7 +205,7 @@ def process_data_dir(data_subdir, diary_dir, model_name, global_data):
 
     # create html report
     diary_entry_template = JINJA_ENV.get_template("diary_entry.html")
-    diary_section_template = JINJA_ENV.get_template("diary_section.html")
+    diary_section_template = JINJA_ENV.get_template("diary_experiment_section.html")
 
     # find pixel-size of images
     plot_img = PIL.Image.open(diary_subdir / 'training_metrics.png')
@@ -327,7 +327,6 @@ def main(argv=None):
     diary_dir = pathlib.Path(args.diarydir)
 
     (data_dir_catalog, global_data) = catalog_all_dirs(data_dir)
-    print(global_data)
 
     sections = []
     for experiment in data_dir_catalog:
@@ -340,14 +339,17 @@ def main(argv=None):
                     )
                 )
 
+    summaries = []
+    summaries.append("<h3>A summary would go here!</h3>")
     # create html report
-    diary_index_template = JINJA_ENV.get_template("diary.html")
     master_diary = diary_dir / 'index.html'
+    diary_index_template = JINJA_ENV.get_template("diary.html")
     with master_diary.open("w") as master_diary_fh:
         master_diary_fh.write(
                 diary_index_template.render(
-                    title='Data Diary',
-                    sections=sections
+                    title='Data Diary for {0}'.format(data_dir.parent.resolve()),
+                    summaries=summaries,
+                    experiments=sections
                     )
                 )
 
