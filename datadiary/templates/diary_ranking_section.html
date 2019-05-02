@@ -1,0 +1,6 @@
+<h3>{{ criteria }}</h3>
+<ol>
+{% for model in models %}
+    <li>{{ model['name'] }}: {{ model['criteria_value'] }}</li>
+{% endfor %}
+</ol>

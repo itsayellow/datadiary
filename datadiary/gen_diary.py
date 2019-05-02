@@ -284,12 +284,12 @@ def catalog_all_dirs(data_dir):
     # Find max loss over all datasets, so we can adjust all
     #   loss plots from 0 to max loss (consistent ylim for all plots)
     global_data = {}
-    data_dir_catalog = []
+    experiments = []
     for data_subdir in [x for x in data_dir.iterdir() if x.is_dir()]:
         data_subdir_data = catalog_dir(data_subdir)
         if data_subdir_data is None:
             continue
-        data_dir_catalog.append(data_subdir_data)
+        experiments.append(data_subdir_data)
         global_data['max_loss'] = max(
                 global_data.get('max_loss', 0),
                 data_subdir_data['train_data']['max_loss']
@@ -307,7 +307,7 @@ def catalog_all_dirs(data_dir):
                 data_subdir_data['train_data']['best_epoch']
                 )
 
-    return (data_dir_catalog, global_data)
+    return (experiments, global_data)
 
 
 def main(argv=None):
@@ -315,10 +315,10 @@ def main(argv=None):
     data_dir = pathlib.Path(args.datadir)
     diary_dir = pathlib.Path(args.diarydir)
 
-    (data_dir_catalog, global_data) = catalog_all_dirs(data_dir)
+    (experiments, global_data) = catalog_all_dirs(data_dir)
 
     sections = []
-    for experiment in data_dir_catalog:
+    for experiment in experiments:
         sections.append(
                 gen_experiment_html(
                     experiment['datadir'],
@@ -329,8 +329,49 @@ def main(argv=None):
                     )
                 )
 
+    # create summaries
     summaries = []
-    summaries.append("<h3>A summary would go here!</h3>")
+    diary_ranking_section_template = JINJA_ENV.get_template('diary_ranking_section.html')
+
+    expts_val_acc_ranked = sorted(
+            experiments,
+            key=lambda x: x['train_data']['best_val_acc_perc'],
+            reverse=True
+            )
+    expts_val_acc_out = [
+            {
+                'name':x['experiment_info']['model_name'],
+                'criteria_value':"{0:.1f}%".format(x['train_data']['best_val_acc_perc'])
+                }
+            for x in expts_val_acc_ranked
+            ]
+    summaries.append(
+            diary_ranking_section_template.render(
+                criteria="Best Validation Accuracy",
+                models=expts_val_acc_out
+                )
+            )
+
+    expts_epoch_ranked = sorted(
+            experiments,
+            key=lambda x: x['train_data']['best_epoch'],
+            reverse=False
+            )
+    expts_epoch_out = [
+            {
+                'name':x['experiment_info']['model_name'],
+                'criteria_value':"Epoch {0}".format(x['train_data']['best_epoch'])
+                }
+            for x in expts_epoch_ranked
+            ]
+    summaries.append(
+            diary_ranking_section_template.render(
+                criteria="Quickest Training (Minimum Best Epoch)",
+                models=expts_epoch_out
+                )
+            )
+
+
     # create html report
     master_diary = diary_dir / 'index.html'
     diary_index_template = JINJA_ENV.get_template("diary.html")
