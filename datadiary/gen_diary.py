@@ -12,29 +12,33 @@ import argparse
 import json
 import pathlib
 import sys
+import warnings
 
 from contextlib import redirect_stderr
 import jinja2
 import os
+import tqdm
 # Mute Tensorflow chatter messages ('1' means filter out INFO messages.)
 os.environ['TF_CPP_MIN_LOG_LEVEL']='1'
 # Mute Keras chatter messages
 with redirect_stderr(open(os.devnull, "w")):
     from keras.models import load_model
     from keras.utils import plot_model
-
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import PIL
-import warnings
+
+
 warnings.simplefilter('ignore', PIL.Image.DecompressionBombWarning)
+
 
 TEMPLATE_SEARCH_PATH = [pathlib.Path(__file__).parent / 'templates']
 JINJA_ENV = jinja2.Environment(
         loader=jinja2.FileSystemLoader(searchpath=TEMPLATE_SEARCH_PATH)
         )
+
 
 def process_command_line(argv):
     """Process command line invocation arguments and switches.
@@ -324,8 +328,9 @@ def main(argv=None):
 
     (experiments, global_data) = catalog_all_dirs(data_dir)
 
+    print("Rendering HTML summaries of all jobs...")
     sections = []
-    for experiment in experiments:
+    for experiment in tqdm.tqdm(experiments, leave=False):
         sections.append(gen_experiment_html(diary_dir, experiment, global_data))
 
     # create summaries
@@ -384,6 +389,7 @@ def main(argv=None):
                     experiments=sections
                     )
                 )
+    print("Finished.")
 
     return 0
 

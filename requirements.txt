@@ -11,6 +11,7 @@ tensorflow
 keras
 pydot
 Pillow
+tqdm
 
 # my package(s)
 #git+https://github.com/itsayellow/tictoc.git

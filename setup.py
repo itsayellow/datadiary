@@ -32,6 +32,7 @@ setup(
             'keras',
             'pydot',
             'Pillow',
+            'tqdm',
             ],
         entry_points={
             'console_scripts':[
