@@ -166,7 +166,7 @@ def gen_data_plots(data_dir, diary_dir, train_data, global_data):
             )
 
 
-def gen_experiment_html(diary_dir, experiment, global_data):
+def render_experiment_html(diary_dir, experiment, global_data):
     data_subdir = experiment['info']['datadir']
     train_data = experiment['train_data']
 
@@ -331,6 +331,24 @@ def catalog_all_dirs(data_dir):
     return (experiments, global_data)
 
 
+def create_summary(experiments, title, sort_key, reverse, dict_create):
+    diary_ranking_section_template = JINJA_ENV.get_template('diary_ranking_section.html')
+
+    expts_val_acc_ranked = sorted(
+            experiments,
+            key=sort_key,
+            reverse=reverse
+            )
+    expts_val_acc_out = [
+            dict_create(x)
+            for x in expts_val_acc_ranked
+            ]
+    return diary_ranking_section_template.render(
+            criteria=title,
+            models=expts_val_acc_out
+            )
+
+
 def main(argv=None):
     args = process_command_line(argv)
     data_dir = pathlib.Path(args.datadir)
@@ -341,54 +359,40 @@ def main(argv=None):
     print("Rendering HTML summaries of all jobs...")
     sections = []
     for experiment in tqdm.tqdm(experiments, leave=False, unit='job'):
-        sections.append(gen_experiment_html(diary_dir, experiment, global_data))
+        sections.append(
+                render_experiment_html(diary_dir, experiment, global_data)
+                )
 
     # create summaries
     summaries = []
-    diary_ranking_section_template = JINJA_ENV.get_template('diary_ranking_section.html')
-
-    expts_val_acc_ranked = sorted(
-            experiments,
-            key=lambda x: x['train_data']['best_val_acc_perc'],
-            reverse=True
-            )
-    expts_val_acc_out = [
-            {
-                'name':x['info']['model_name'],
-                'topdir':x['info']['topdir'],
-                'criteria_value':"{0:.1f}%".format(x['train_data']['best_val_acc_perc'])
-                }
-            for x in expts_val_acc_ranked
-            ]
     summaries.append(
-            diary_ranking_section_template.render(
-                criteria="Best Validation Accuracy",
-                models=expts_val_acc_out
+            create_summary(
+                experiments,
+                title="Best Validation Accuracy",
+                sort_key=lambda x: x['train_data']['best_val_acc_perc'],
+                reverse=True,
+                dict_create=lambda x: {
+                    'name':x['info']['model_name'],
+                    'topdir':x['info']['topdir'],
+                    'criteria_value':"{0:.1f}%".format(x['train_data']['best_val_acc_perc'])
+                    },
+                )
+            )
+    summaries.append(
+            create_summary(
+                experiments,
+                title="Quickest Training (Minimum Best Epoch)",
+                sort_key=lambda x: x['train_data']['best_epoch'],
+                reverse=False,
+                dict_create=lambda x: {
+                    'name':x['info']['model_name'],
+                    'topdir':x['info']['topdir'],
+                    'criteria_value':"Epoch {0}".format(x['train_data']['best_epoch'])
+                    },
                 )
             )
 
-    expts_epoch_ranked = sorted(
-            experiments,
-            key=lambda x: x['train_data']['best_epoch'],
-            reverse=False
-            )
-    expts_epoch_out = [
-            {
-                'name':x['info']['model_name'],
-                'topdir':x['info']['topdir'],
-                'criteria_value':"Epoch {0}".format(x['train_data']['best_epoch'])
-                }
-            for x in expts_epoch_ranked
-            ]
-    summaries.append(
-            diary_ranking_section_template.render(
-                criteria="Quickest Training (Minimum Best Epoch)",
-                models=expts_epoch_out
-                )
-            )
-
-
-    # create html report
+    # create index/summary html report
     master_diary = diary_dir / 'index.html'
     diary_index_template = JINJA_ENV.get_template("diary.html")
     with master_diary.open("w") as master_diary_fh:
