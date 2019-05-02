@@ -137,7 +137,7 @@ def plot_loss_acc(fig, epochs, train_data, global_data):
     return(ax1, ax2)
 
 
-def gen_data_plots(data_dir, diary_dir, train_data, global_data):
+def gen_data_plots(diary_dir, train_data, global_data):
     best_epoch = train_data['best_epoch']
 
     # actually plot
@@ -176,7 +176,7 @@ def render_experiment_html(diary_dir, experiment, global_data):
     diary_subdir.mkdir(parents=True, exist_ok=True)
 
     # make plot png
-    gen_data_plots(data_subdir, diary_subdir, train_data, global_data)
+    gen_data_plots(diary_subdir, train_data, global_data)
 
     # make model structure png
     best_weights_file = data_subdir / 'saved_models' / 'weights.best.hdf5'
