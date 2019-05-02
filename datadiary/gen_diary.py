@@ -10,30 +10,28 @@
 
 import argparse
 import json
+import os
 import pathlib
 import sys
 import warnings
-
 from contextlib import redirect_stderr
+
+import imagesize
 import jinja2
-import os
 import tqdm
 # Mute Tensorflow chatter messages ('1' means filter out INFO messages.)
-os.environ['TF_CPP_MIN_LOG_LEVEL']='1'
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 # Mute Keras chatter messages
 with redirect_stderr(open(os.devnull, "w")):
     from keras.models import load_model
+import numpy as np
 import matplotlib
 # png-generation only, no interactive GUI
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-import numpy as np
-import PIL
 
 # custom version of keras.utils.vis_utils to get dpi argument
 from datadiary.keras_vis_utils import plot_model
-
-warnings.simplefilter('ignore', PIL.Image.DecompressionBombWarning)
 
 
 TEMPLATE_SEARCH_PATH = [pathlib.Path(__file__).parent / 'templates']
@@ -141,7 +139,7 @@ def gen_data_plots(diary_dir, train_data, global_data):
     best_epoch = train_data['best_epoch']
 
     # actually plot
-    fig = plt.figure(figsize=(10,5))
+    fig = plt.figure(figsize=(10, 5))
     (ax1, ax2) = plot_loss_acc(fig, train_data['epochs'], train_data, global_data)
 
     # use annotate instead of arrow because so much easier to get good results
@@ -161,10 +159,11 @@ def gen_data_plots(diary_dir, train_data, global_data):
             )
 
     # save and display to computer
+    tight_bbox = fig.get_tightbbox(fig.canvas.get_renderer())
     fig.savefig(
             str(diary_dir / "training_metrics.png"),
             dpi=200,
-            bbox_inches="tight"
+            bbox_inches='tight'
             )
 
 
@@ -206,11 +205,11 @@ def render_experiment_html(diary_dir, experiment, global_data):
     diary_section_template = JINJA_ENV.get_template("diary_experiment_section.html")
 
     # find pixel-size of images
-    plot_img = PIL.Image.open(diary_subdir / 'training_metrics.png')
-    plot_img_size = [int(x/2) for x in plot_img.size]
+    plot_img_size = imagesize.get(diary_subdir / 'training_metrics.png')
+    plot_img_size = [int(x/2) for x in plot_img_size]
     plot_img_size_str = "width:{0[0]}px;height:{0[1]}px;".format(plot_img_size)
-    model_img = PIL.Image.open(diary_subdir / 'model.png')
-    model_img_size = [int(x/2) for x in model_img.size]
+    model_img_size = imagesize.get(diary_subdir / 'model.png')
+    model_img_size = [int(x/2) for x in model_img_size]
     model_img_size_str = "width:{0[0]}px;height:{0[1]}px;".format(model_img_size)
 
     job = {}

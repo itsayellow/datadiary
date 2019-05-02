@@ -31,7 +31,8 @@ setup(
             'tensorflow',
             'keras',
             'pydot',
-            'Pillow',
+            'Pillow', # TODO: remove!
+            'imagesize',
             'tqdm',
             ],
         entry_points={
