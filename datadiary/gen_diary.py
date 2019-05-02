@@ -190,6 +190,11 @@ def render_experiment_html(diary_dir, experiment, global_data):
     model_opt_config_fmt = [
             "{0}: {1:.3g}".format(x, model_opt_config[x]) for x in model_opt_config
             ]
+    model_opt_str = ", ".join(
+            [
+            "{0}={1:.3g}".format(x, model_opt_config[x]) for x in model_opt_config
+                ]
+            )
 
     # Use dpi=192 for 2x size.
     # Size image in html down by 1/2x to get same size with 2x dpi.
@@ -224,6 +229,7 @@ def render_experiment_html(diary_dir, experiment, global_data):
     job['best_val_acc_epoch'] = train_data['best_epoch']
     job['model_optimizer_name'] = model_opt_name
     job['model_optimizer_config'] = model_opt_config_fmt
+    job['model_optimizer_config_str'] = model_opt_str
 
     report_path = diary_subdir / 'report.html'
     with report_path.open("w") as report_fh:
