@@ -28,7 +28,8 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import PIL
-
+import warnings
+warnings.simplefilter('ignore', PIL.Image.DecompressionBombWarning)
 
 TEMPLATE_SEARCH_PATH = [pathlib.Path(__file__).parent / 'templates']
 JINJA_ENV = jinja2.Environment(
@@ -164,19 +165,19 @@ def gen_data_plots(data_dir, diary_dir, train_data, global_data):
 def gen_experiment_html(diary_dir, experiment, global_data):
     data_subdir = experiment['info']['datadir']
     train_data = experiment['train_data']
-    experiment_info = experiment['info']
 
-    model_name = experiment_info['model_name']
-    job_id = experiment_info['job_id']
-
-    diary_subdir = diary_dir / model_name
+    diary_subdir = diary_dir / experiment['info']['topdirname']
     diary_subdir.mkdir(parents=True, exist_ok=True)
 
     # make plot png
     gen_data_plots(data_subdir, diary_subdir, train_data, global_data)
 
     # make model structure png
-    my_model = load_model(str(data_subdir / 'saved_models' / 'weights.best.hdf5'))
+    best_weights_file = data_subdir / 'saved_models' / 'weights.best.hdf5'
+    if not best_weights_file.is_file():
+        best_weights_file = list((data_subdir / 'saved_models').glob('*.hdf5'))[0]
+    my_model = load_model(str(best_weights_file))
+
     # keras is using dpi=96 and PIL is using dpi=72, thus PIL rasterizes
     #   keras eps to 3/4 the size keras png
     # We multiply by 16/6 to get 2x size png for detail on retina screens
@@ -205,8 +206,9 @@ def gen_experiment_html(diary_dir, experiment, global_data):
     model_img_size_str = "width:{0[0]}px;height:{0[1]}px;".format(model_img_size)
 
     job = {}
-    job['model_name'] = model_name
-    job['job_id'] = job_id
+    job['model_name'] = experiment['info']['model_name']
+    job['job_id'] = experiment['info']['job_id']
+    job['topdir'] = experiment['info']['topdir']
     job['model_diagram_img'] = 'model.png'
     job['model_diagram_img_style'] = model_img_size_str
     job['model_metrics_img'] = 'training_metrics.png'
@@ -244,14 +246,16 @@ def catalog_dir(data_subdir):
     else:
         job_name = data_subdir.name
         try:
-            datadir = data_subdir.glob('data_*')[0]
+            datadir = list(data_subdir.glob('data_*'))[0]
         except IndexError:
             return None
 
-    model_name = data_subdir.name.lstrip("data_")
+    model_name = datadir.name.lstrip("data_")
 
     # extract data
-    train_data_path = data_subdir / 'train_history.json'
+    train_data_path = datadir / 'train_history.json'
+    if not train_data_path.is_file():
+        return None
     with train_data_path.open("r") as train_data_fh:
         train_data = json.load(train_data_fh)
     train_data['epochs'] = range(1, len(train_data['acc'])+1)
@@ -282,6 +286,7 @@ def catalog_dir(data_subdir):
     experiment_info['job_id'] = job_name
     experiment_info['datadir'] = datadir
     experiment_info['topdir'] = data_subdir
+    experiment_info['topdirname'] = data_subdir.name
 
     return {'info':experiment_info, 'train_data':train_data}
 
@@ -335,6 +340,7 @@ def main(argv=None):
     expts_val_acc_out = [
             {
                 'name':x['info']['model_name'],
+                'topdir':x['info']['topdir'],
                 'criteria_value':"{0:.1f}%".format(x['train_data']['best_val_acc_perc'])
                 }
             for x in expts_val_acc_ranked
@@ -354,6 +360,7 @@ def main(argv=None):
     expts_epoch_out = [
             {
                 'name':x['info']['model_name'],
+                'topdir':x['info']['topdir'],
                 'criteria_value':"Epoch {0}".format(x['train_data']['best_epoch'])
                 }
             for x in expts_epoch_ranked
