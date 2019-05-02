@@ -161,27 +161,12 @@ def gen_data_plots(data_dir, diary_dir, train_data, global_data):
             )
 
 
-def process_data_dir(data_subdir, diary_dir, model_name, global_data):
-    if data_subdir.name.startswith("data_"):
-        job_id = "Local Job"
-    else:
-        job_id = job_dir.name
+def gen_experiment_html(data_subdir, diary_dir, train_data, experiment_info, global_data):
+    model_name = experiment_info['model_name']
+    job_id = experiment_info['job_id']
+
     diary_subdir = diary_dir / model_name
     diary_subdir.mkdir(parents=True, exist_ok=True)
-
-    # extract data
-    train_data_path = data_subdir / 'train_history.json'
-    with train_data_path.open("r") as train_data_fh:
-        train_data = json.load(train_data_fh)
-    train_data['val_acc_perc'] = 100*np.array(train_data['val_acc'])
-    train_data['acc_perc'] = 100*np.array(train_data['acc'])
-
-    # find best val_loss
-    train_data['epochs'] = range(1, len(train_data['acc'])+1)
-    best_i = np.argmin(np.array(train_data['val_loss']))
-    train_data['best_epoch'] = best_i + 1
-    train_data['best_val_loss'] = train_data['val_loss'][best_i]
-    train_data['best_val_acc_perc'] = train_data['val_acc_perc'][best_i]
 
     # make plot png
     gen_data_plots(data_subdir, diary_subdir, train_data, global_data)
@@ -288,7 +273,11 @@ def catalog_dir(data_subdir):
             )
     train_data['max_epoch'] = np.max(train_data['epochs'])
 
-    return {'datadir':datadir, 'model_name':model_name, 'train_data':train_data}
+    experiment_info = {}
+    experiment_info['model_name'] = model_name
+    experiment_info['job_id'] = job_name
+
+    return {'datadir':datadir, 'experiment_info':experiment_info, 'train_data':train_data}
 
 
 def catalog_all_dirs(data_dir):
@@ -306,13 +295,13 @@ def catalog_all_dirs(data_dir):
                 data_subdir_data['train_data']['max_loss']
                 )
         if data_subdir_data['train_data']['max_acc_perc'] > global_data.get('max_acc_perc', 0):
-            global_data['model_max_acc_perc'] = data_subdir_data['model_name']
+            global_data['model_max_acc_perc'] = data_subdir_data['experiment_info']['model_name']
         global_data['max_acc_perc'] = max(
                 global_data.get('max_acc_perc', 0),
                 data_subdir_data['train_data']['max_acc_perc']
                 )
         if data_subdir_data['train_data']['best_epoch'] < global_data.get('min_best_epoch', 0):
-            global_data['model_min_best_epoch'] = data_subdir_data['model_name']
+            global_data['model_min_best_epoch'] = data_subdir_data['experiment_info']['model_name']
         global_data['min_best_epoch'] = min(
                 global_data.get('min_best_epoch', 1e6),
                 data_subdir_data['train_data']['best_epoch']
@@ -331,10 +320,11 @@ def main(argv=None):
     sections = []
     for experiment in data_dir_catalog:
         sections.append(
-                process_data_dir(
+                gen_experiment_html(
                     experiment['datadir'],
                     diary_dir,
-                    experiment['model_name'],
+                    experiment['train_data'],
+                    experiment['experiment_info'],
                     global_data
                     )
                 )
