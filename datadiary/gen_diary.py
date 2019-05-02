@@ -139,17 +139,17 @@ def gen_data_plots(data_dir, diary_dir, train_data, global_data):
     (ax1, ax2) = plot_loss_acc(fig, train_data['epochs'], train_data, global_data)
 
     # use annotate instead of arrow because so much easier to get good results
-    ax1_scale = ax1.get_ylim()[1] - ax1.get_ylim()[0]
+    ax1_yscale = ax1.get_ylim()[1] - ax1.get_ylim()[0]
     ax1.annotate('best=%.1f'%train_data['best_val_loss'],
             (best_epoch, train_data['best_val_loss']),
-            (best_epoch, train_data['best_val_loss'] + .2*ax1_scale),
+            (best_epoch, train_data['best_val_loss'] + .1*ax1_yscale),
             arrowprops=dict(arrowstyle="->"),
             horizontalalignment='center'
             )
-    ax2_scale = ax2.get_ylim()[1] - ax2.get_ylim()[0]
+    ax2_yscale = ax2.get_ylim()[1] - ax2.get_ylim()[0]
     ax2.annotate('best=%.1f'%train_data['best_val_acc_perc'],
             (best_epoch, train_data['best_val_acc_perc']),
-            (best_epoch, train_data['best_val_acc_perc'] - .2*ax2_scale),
+            (best_epoch, train_data['best_val_acc_perc'] - .1*ax2_yscale),
             arrowprops=dict(arrowstyle="->"),
             horizontalalignment='center'
             )
