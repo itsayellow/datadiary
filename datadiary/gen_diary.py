@@ -23,13 +23,15 @@ os.environ['TF_CPP_MIN_LOG_LEVEL']='1'
 # Mute Keras chatter messages
 with redirect_stderr(open(os.devnull, "w")):
     from keras.models import load_model
-    from keras.utils import plot_model
 import matplotlib
+# png-generation only, no interactive GUI
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import PIL
 
+# custom version of keras.utils.vis_utils to get dpi argument
+from datadiary.keras_vis_utils import plot_model
 
 warnings.simplefilter('ignore', PIL.Image.DecompressionBombWarning)
 
@@ -190,20 +192,14 @@ def render_experiment_html(diary_dir, experiment, global_data):
             "{0}: {1:.3g}".format(x, model_opt_config[x]) for x in model_opt_config
             ]
 
-    # keras is using dpi=96 and PIL is using dpi=72, thus PIL rasterizes
-    #   keras eps to 3/4 the size keras png
-    # We multiply by 16/6 to get 2x size png for detail on retina screens
-    # PIL resize allows us to anti-alias (PIL doesn't antialias rasterizing.)
+    # Use dpi=192 for 2x size.
+    # Size image in html down by 1/2x to get same size with 2x dpi.
     plot_model(
             my_model,
-            to_file=str(diary_subdir / 'model.eps'),
-            show_shapes=True
+            to_file=str(diary_subdir / 'model.png'),
+            show_shapes=True,
+            dpi=192
             )
-    eps_model = PIL.Image.open(diary_subdir / 'model.eps')
-    eps_model.load(scale=16)
-    new_size = (int(eps_model.size[0]/6), int(eps_model.size[1]/6))
-    eps_model = eps_model.resize(new_size, PIL.Image.LANCZOS)
-    eps_model.save(diary_subdir / 'model.png')
 
     # create html report
     diary_entry_template = JINJA_ENV.get_template("diary_entry.html")
@@ -331,7 +327,7 @@ def catalog_all_dirs(data_dir):
     return (experiments, global_data)
 
 
-def create_summary(experiments, title, sort_key, reverse, dict_create):
+def create_ranking(experiments, title, sort_key, reverse, info_dict_create):
     diary_ranking_section_template = JINJA_ENV.get_template('diary_ranking_section.html')
 
     expts_val_acc_ranked = sorted(
@@ -340,7 +336,7 @@ def create_summary(experiments, title, sort_key, reverse, dict_create):
             reverse=reverse
             )
     expts_val_acc_out = [
-            dict_create(x)
+            info_dict_create(x)
             for x in expts_val_acc_ranked
             ]
     return diary_ranking_section_template.render(
@@ -366,12 +362,12 @@ def main(argv=None):
     # create summaries
     summaries = []
     summaries.append(
-            create_summary(
+            create_ranking(
                 experiments,
                 title="Best Validation Accuracy",
                 sort_key=lambda x: x['train_data']['best_val_acc_perc'],
                 reverse=True,
-                dict_create=lambda x: {
+                info_dict_create=lambda x: {
                     'name':x['info']['model_name'],
                     'topdir':x['info']['topdir'],
                     'criteria_value':"{0:.1f}%".format(x['train_data']['best_val_acc_perc'])
@@ -379,12 +375,12 @@ def main(argv=None):
                 )
             )
     summaries.append(
-            create_summary(
+            create_ranking(
                 experiments,
                 title="Quickest Training (Minimum Best Epoch)",
                 sort_key=lambda x: x['train_data']['best_epoch'],
                 reverse=False,
-                dict_create=lambda x: {
+                info_dict_create=lambda x: {
                     'name':x['info']['model_name'],
                     'topdir':x['info']['topdir'],
                     'criteria_value':"Epoch {0}".format(x['train_data']['best_epoch'])
