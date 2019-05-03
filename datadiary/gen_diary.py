@@ -183,7 +183,7 @@ def render_experiment_html(diary_dir, experiment, global_data):
         best_weights_file = list((data_subdir / 'saved_models').glob('*.hdf5'))[0]
     my_model = load_model(str(best_weights_file))
 
-    # get optimizer info
+    # get model info
     model_opt_name = my_model.optimizer.__class__.__module__ + \
             "." + my_model.optimizer.__class__.__name__
     model_opt_config = my_model.optimizer.get_config()
@@ -195,6 +195,7 @@ def render_experiment_html(diary_dir, experiment, global_data):
             "{0}={1:.3g}".format(x, model_opt_config[x]) for x in model_opt_config
                 ]
             )
+    model_loss_type = my_model.loss
 
     # Use dpi=192 for 2x size.
     # Size image in html down by 1/2x to get same size with 2x dpi.
@@ -230,6 +231,7 @@ def render_experiment_html(diary_dir, experiment, global_data):
     job['model_optimizer_name'] = model_opt_name
     job['model_optimizer_config'] = model_opt_config_fmt
     job['model_optimizer_config_str'] = model_opt_str
+    job['model_loss'] = model_loss_type
 
     report_path = diary_subdir / 'report.html'
     with report_path.open("w") as report_fh:

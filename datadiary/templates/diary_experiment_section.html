@@ -5,7 +5,10 @@ Best Validation Loss: Accuracy {{ job['best_val_acc_perc'] }}%
 at epoch {{ job['best_val_acc_epoch'] }}
 </p>
 <p>
-Optimizer: {{ job['model_optimizer_name'] }}({{ job['model_optimizer_config_str'] }})
+Optimizer: <code>{{ job['model_optimizer_name'] }}({{ job['model_optimizer_config_str'] }})</code>
+</p>
+<p>
+Loss: <code>{{ job['model_loss'] }}</code>
 </p>
 <p>
 <a href="{{ report_path }}">Full report</a>

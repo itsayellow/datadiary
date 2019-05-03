@@ -14,13 +14,16 @@
     <img src="{{ job['model_diagram_img'] }}" style="{{ job['model_diagram_img_style'] }}">
     </p>
     <p>
-    Optimizer: {{ job['model_optimizer_name'] }}
+    Optimizer: <code>{{ job['model_optimizer_name'] }}</code>
     </p>
     <ul>
         {% for config_item in job['model_optimizer_config'] %}
         <li>{{ config_item }}</li>
         {% endfor %}
     </ul>
+    <p>
+    Loss: <code>{{ job['model_loss'] }}</code>
+    </p>
 
     <h2>Model Performance</h2>
     <p>
