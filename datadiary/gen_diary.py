@@ -358,6 +358,9 @@ def main(argv=None):
     diary_dir = pathlib.Path(args.diarydir)
 
     (experiments, global_data) = catalog_all_dirs(data_dir)
+    # sort by accuracy
+    experiments.sort(key=lambda x: x['train_data']['best_val_acc_perc'], reverse=True)
+    experiments_subtitle = '(Sorted by Validation Accuracy)'
 
     print("Rendering HTML summaries of all jobs...")
     sections = []
@@ -403,6 +406,7 @@ def main(argv=None):
                 diary_index_template.render(
                     title='Data Diary for {0}'.format(data_dir.parent.resolve()),
                     summaries=summaries,
+                    experiments_subtitle=experiments_subtitle,
                     experiments=sections
                     )
                 )

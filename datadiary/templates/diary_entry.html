@@ -8,8 +8,10 @@
 
 <body>
     <h1>{{ job['job_id'] }}</h1>
-
-    <h2>Model: {{ job['model_name'] }}</h2> 
+    <p>
+    Directory: <code>{{ job['topdir'] }}</code>
+    </p>
+    <h2>Model: {{ job['model_name'] }}</h2>
     <p>
     <img src="{{ job['model_diagram_img'] }}" style="{{ job['model_diagram_img_style'] }}">
     </p>
