@@ -269,13 +269,21 @@ def catalog_dir(data_subdir):
 
     model_name = datadir.name.lstrip("data_")
 
-    # extract data
+    # extract training data
     train_data_path = datadir / 'train_history.json'
     if not train_data_path.is_file():
         return None
     with train_data_path.open("r") as train_data_fh:
         train_data = json.load(train_data_fh)
     train_data['epochs'] = range(1, len(train_data['acc'])+1)
+
+    # extract test data
+    test_data_path = datadir / 'test.json'
+    try:
+        with test_data_path.open("r") as test_data_fh:
+            test_data = json.load(test_data_fh)
+    except:
+        test_data = {}
 
     # convert data to numpy arrays
     for varname in train_data:
@@ -305,7 +313,7 @@ def catalog_dir(data_subdir):
     experiment_info['topdir'] = data_subdir
     experiment_info['topdirname'] = data_subdir.name
 
-    return {'info':experiment_info, 'train_data':train_data}
+    return {'info':experiment_info, 'train_data':train_data, 'test_data':test_data}
 
 
 def catalog_all_dirs(data_dir):
