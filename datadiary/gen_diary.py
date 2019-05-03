@@ -24,6 +24,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 # Mute Keras chatter messages
 with redirect_stderr(open(os.devnull, "w")):
     from keras.models import load_model
+from keras.utils.generic_utils import serialize_keras_object
 import numpy as np
 import matplotlib
 # png-generation only, no interactive GUI
@@ -196,6 +197,7 @@ def render_experiment_html(diary_dir, experiment, global_data):
                 ]
             )
     model_loss_type = my_model.loss
+    #model_metrics = my_model.metrics
 
     # Use dpi=192 for 2x size.
     # Size image in html down by 1/2x to get same size with 2x dpi.
