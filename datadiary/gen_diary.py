@@ -349,19 +349,22 @@ def catalog_all_dirs(data_dir):
 def create_ranking(experiments, title, sort_key, reverse, info_dict_create):
     diary_ranking_section_template = JINJA_ENV.get_template('diary_ranking_section.html')
 
-    expts_val_acc_ranked = sorted(
-            experiments,
-            key=sort_key,
-            reverse=reverse
-            )
-    expts_val_acc_out = [
-            info_dict_create(x)
-            for x in expts_val_acc_ranked
-            ]
-    return diary_ranking_section_template.render(
-            criteria=title,
-            models=expts_val_acc_out
-            )
+    if experiments:
+        expts_val_acc_ranked = sorted(
+                experiments,
+                key=sort_key,
+                reverse=reverse
+                )
+        expts_val_acc_out = [
+                info_dict_create(x)
+                for x in expts_val_acc_ranked
+                ]
+        return diary_ranking_section_template.render(
+                criteria=title,
+                models=expts_val_acc_out
+                )
+    else:
+        return ""
 
 
 def main(argv=None):
@@ -385,7 +388,7 @@ def main(argv=None):
     summaries = []
     summaries.append(
             create_ranking(
-                experiments,
+                [exp for exp in experiments if 'test_acc_perc' in exp['test_data']],
                 title="Best Test Accuracy",
                 sort_key=lambda x: x['test_data']['test_acc_perc'],
                 reverse=True,
