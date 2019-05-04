@@ -163,6 +163,10 @@ def gen_data_plots(diary_dir, train_data, global_data):
             dpi=200,
             bbox_inches='tight'
             )
+    # Theoretically we are using the "object-oriented" matplotlib approach,
+    #   but somehow all figures are kept around until we close them!
+    # So close figure each time after we save the image.
+    plt.close()
 
 
 def render_experiment_html(diary_dir, experiment, global_data):
