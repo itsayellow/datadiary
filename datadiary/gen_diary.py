@@ -9,6 +9,7 @@
 
 
 import argparse
+import datetime
 import json
 import os
 import pathlib
@@ -24,7 +25,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 # Mute Keras chatter messages
 with redirect_stderr(open(os.devnull, "w")):
     from keras.models import load_model
-from keras.utils.generic_utils import serialize_keras_object
+#from keras.utils.generic_utils import serialize_keras_object
 import numpy as np
 import matplotlib
 # png-generation only, no interactive GUI
@@ -185,6 +186,7 @@ def render_experiment_html(diary_dir, experiment, global_data):
     my_model = load_model(str(best_weights_file))
 
     # get model info
+    #new_model_opt = serialize_keras_object(my_model.optimizer)
     model_opt_name = my_model.optimizer.__class__.__module__ + \
             "." + my_model.optimizer.__class__.__name__
     model_opt_config = my_model.optimizer.get_config()
@@ -368,7 +370,7 @@ def main(argv=None):
     diary_dir = pathlib.Path(args.diarydir)
 
     (experiments, global_data) = catalog_all_dirs(data_dir)
-    # sort by accuracy
+    # sort by validation accuracy
     experiments.sort(key=lambda x: x['train_data']['best_val_acc_perc'], reverse=True)
     experiments_subtitle = '(Sorted by Validation Accuracy)'
 
@@ -381,6 +383,19 @@ def main(argv=None):
 
     # create summaries
     summaries = []
+    summaries.append(
+            create_ranking(
+                experiments,
+                title="Best Test Accuracy",
+                sort_key=lambda x: x['test_data']['test_acc_perc'],
+                reverse=True,
+                info_dict_create=lambda x: {
+                    'name':x['info']['model_name'],
+                    'topdir':x['info']['topdir'],
+                    'criteria_value':"{0:.1f}%".format(x['test_data']['test_acc_perc'])
+                    },
+                )
+            )
     summaries.append(
             create_ranking(
                 experiments,
@@ -411,10 +426,12 @@ def main(argv=None):
     # create index/summary html report
     master_diary = diary_dir / 'index.html'
     diary_index_template = JINJA_ENV.get_template("diary.html")
+    datetime_generated = datetime.datetime.now().strftime("%Y-%m-%d %a %I:%M%p")
     with master_diary.open("w") as master_diary_fh:
         master_diary_fh.write(
                 diary_index_template.render(
                     title='Data Diary for {0}'.format(data_dir.parent.resolve()),
+                    datetime_generated=datetime_generated,
                     summaries=summaries,
                     experiments_subtitle=experiments_subtitle,
                     experiments=sections
