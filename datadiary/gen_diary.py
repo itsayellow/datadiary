@@ -61,11 +61,11 @@ def process_command_line(argv):
     # specifying nargs= puts outputs of parser in list (even if nargs=1)
 
     # required arguments
-    parser.add_argument('datadir',
-            help="Directory containing all experiment data subdirectories."
-            )
     parser.add_argument('diarydir',
             help="Directory for output diary entries."
+            )
+    parser.add_argument('datadir', nargs='+',
+            help="Directory containing all experiment data subdirectories."
             )
 
     # switches/options:
@@ -319,28 +319,29 @@ def catalog_dir(data_subdir):
     return {'info':experiment_info, 'train_data':train_data, 'test_data':test_data}
 
 
-def catalog_all_dirs(data_dir):
+def catalog_all_dirs(data_dirs):
     # Find max loss over all datasets, so we can adjust all
     #   loss plots from 0 to max loss (consistent ylim for all plots)
     global_data = {}
     experiments = []
-    for data_subdir in [x for x in data_dir.iterdir() if x.is_dir()]:
-        data_subdir_data = catalog_dir(data_subdir)
-        if data_subdir_data is None:
-            continue
-        experiments.append(data_subdir_data)
-        global_data['max_loss'] = max(
-                global_data.get('max_loss', 0),
-                data_subdir_data['train_data']['max_loss']
-                )
-        global_data['max_acc_perc'] = max(
-                global_data.get('max_acc_perc', 0),
-                data_subdir_data['train_data']['max_acc_perc']
-                )
-        global_data['min_best_epoch'] = min(
-                global_data.get('min_best_epoch', 1e6),
-                data_subdir_data['train_data']['best_epoch']
-                )
+    for data_dir in data_dirs:
+        for data_subdir in [x for x in data_dir.iterdir() if x.is_dir()]:
+            data_subdir_data = catalog_dir(data_subdir)
+            if data_subdir_data is None:
+                continue
+            experiments.append(data_subdir_data)
+            global_data['max_loss'] = max(
+                    global_data.get('max_loss', 0),
+                    data_subdir_data['train_data']['max_loss']
+                    )
+            global_data['max_acc_perc'] = max(
+                    global_data.get('max_acc_perc', 0),
+                    data_subdir_data['train_data']['max_acc_perc']
+                    )
+            global_data['min_best_epoch'] = min(
+                    global_data.get('min_best_epoch', 1e6),
+                    data_subdir_data['train_data']['best_epoch']
+                    )
 
     return (experiments, global_data)
 
@@ -368,10 +369,10 @@ def create_ranking(experiments, title, sort_key, reverse, info_dict_create):
 
 def main(argv=None):
     args = process_command_line(argv)
-    data_dir = pathlib.Path(args.datadir)
+    data_dirs = [pathlib.Path(dir) for dir in args.datadir]
     diary_dir = pathlib.Path(args.diarydir)
 
-    (experiments, global_data) = catalog_all_dirs(data_dir)
+    (experiments, global_data) = catalog_all_dirs(data_dirs)
     # sort by validation accuracy
     experiments.sort(key=lambda x: x['train_data']['best_val_acc_perc'], reverse=True)
     experiments_subtitle = '(Sorted by Validation Accuracy)'
@@ -431,10 +432,11 @@ def main(argv=None):
     master_diary = diary_dir / 'index.html'
     diary_index_template = JINJA_ENV.get_template("diary.html")
     datetime_generated = datetime.datetime.now().strftime("%Y-%m-%d %a %I:%M%p")
+    data_dirs_str = ", ".join([str(d.parent.resolve()) for d in data_dirs])
     with master_diary.open("w") as master_diary_fh:
         master_diary_fh.write(
                 diary_index_template.render(
-                    title='Data Diary for {0}'.format(data_dir.parent.resolve()),
+                    title='Data Diary for {0}'.format(data_dirs_str),
                     datetime_generated=datetime_generated,
                     summaries=summaries,
                     experiments_subtitle=experiments_subtitle,
