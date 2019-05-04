@@ -12,6 +12,7 @@ import argparse
 import datetime
 import json
 import os
+import os.path
 import pathlib
 import sys
 import warnings
@@ -434,11 +435,17 @@ def main(argv=None):
     master_diary = diary_dir / 'index.html'
     diary_index_template = JINJA_ENV.get_template("diary.html")
     datetime_generated = datetime.datetime.now().strftime("%Y-%m-%d %a %I:%M%p")
-    data_dirs_str = ", ".join([str(d.parent.resolve()) for d in data_dirs])
+
+    data_dirs_parent = [d.parent.resolve() for d in data_dirs]
+    data_dirs_commonpath = os.path.commonpath([str(d) for d in data_dirs_parent])
+    data_subdirs_str = ", ".join(
+            [str(d.relative_to(data_dirs_commonpath)) for d in data_dirs_parent]
+            )
+
     with master_diary.open("w") as master_diary_fh:
         master_diary_fh.write(
                 diary_index_template.render(
-                    title='Data Diary for {0}'.format(data_dirs_str),
+                    title='Data Diary for {0}/{{{1}}}'.format(data_dirs_commonpath, data_subdirs_str),
                     datetime_generated=datetime_generated,
                     summaries=summaries,
                     experiments_subtitle=experiments_subtitle,
