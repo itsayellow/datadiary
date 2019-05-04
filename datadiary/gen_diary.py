@@ -61,18 +61,15 @@ def process_command_line(argv):
     # specifying nargs= puts outputs of parser in list (even if nargs=1)
 
     # required arguments
-    parser.add_argument('diarydir',
-            help="Directory for output diary entries."
-            )
     parser.add_argument('datadir', nargs='+',
             help="Directory containing all experiment data subdirectories."
             )
 
     # switches/options:
-    #parser.add_argument(
-    #    '-s', '--max_size', action='store',
-    #    help='String specifying maximum size of images.  ' \
-    #            'Larger images will be resized. (e.g. "1024x768")')
+    parser.add_argument(
+            '-d', '--diary', action='store', default='diary',
+            help='Directory to put diary html doc tree.'
+            )
     #parser.add_argument(
     #    '-o', '--omit_hidden', action='store_true',
     #    help='Do not copy picasa hidden images to destination directory.')
@@ -370,13 +367,14 @@ def create_ranking(experiments, title, sort_key, reverse, info_dict_create):
 def main(argv=None):
     args = process_command_line(argv)
     data_dirs = [pathlib.Path(dir) for dir in args.datadir]
-    diary_dir = pathlib.Path(args.diarydir)
+    diary_dir = pathlib.Path(args.diary)
 
     (experiments, global_data) = catalog_all_dirs(data_dirs)
     # sort by validation accuracy
     experiments.sort(key=lambda x: x['train_data']['best_val_acc_perc'], reverse=True)
     experiments_subtitle = '(Sorted by Validation Accuracy)'
 
+    print("Diary output to: {0}".format(diary_dir))
     print("Rendering HTML summaries of all jobs...")
     sections = []
     for experiment in tqdm.tqdm(experiments, leave=False, unit='job'):
