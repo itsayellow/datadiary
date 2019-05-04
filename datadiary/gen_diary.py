@@ -161,7 +161,6 @@ def gen_data_plots(diary_dir, train_data, global_data):
             )
 
     # save and display to computer
-    tight_bbox = fig.get_tightbbox(fig.canvas.get_renderer())
     fig.savefig(
             str(diary_dir / "training_metrics.png"),
             dpi=200,
@@ -286,7 +285,7 @@ def catalog_dir(data_subdir):
     try:
         with test_data_path.open("r") as test_data_fh:
             test_data = json.load(test_data_fh)
-    except:
+    except IOError:
         test_data = {}
 
     # convert data to numpy arrays
@@ -349,22 +348,22 @@ def catalog_all_dirs(data_dir):
 def create_ranking(experiments, title, sort_key, reverse, info_dict_create):
     diary_ranking_section_template = JINJA_ENV.get_template('diary_ranking_section.html')
 
-    if experiments:
-        expts_val_acc_ranked = sorted(
-                experiments,
-                key=sort_key,
-                reverse=reverse
-                )
-        expts_val_acc_out = [
-                info_dict_create(x)
-                for x in expts_val_acc_ranked
-                ]
-        return diary_ranking_section_template.render(
-                criteria=title,
-                models=expts_val_acc_out
-                )
-    else:
+    if not experiments:
         return ""
+
+    expts_val_acc_ranked = sorted(
+            experiments,
+            key=sort_key,
+            reverse=reverse
+            )
+    expts_val_acc_out = [
+            info_dict_create(x)
+            for x in expts_val_acc_ranked
+            ]
+    return diary_ranking_section_template.render(
+            criteria=title,
+            models=expts_val_acc_out
+            )
 
 
 def main(argv=None):
@@ -386,6 +385,8 @@ def main(argv=None):
 
     # create summaries
     summaries = []
+
+    # tolerate empty test_data dict in data dirs
     summaries.append(
             create_ranking(
                 [exp for exp in experiments if 'test_acc_perc' in exp['test_data']],
