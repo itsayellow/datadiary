@@ -174,6 +174,9 @@ def render_experiment_html(diary_dir, experiment, global_data):
     data_subdir = experiment['info']['datadir']
     train_data = experiment['train_data']
 
+    # TODO: 2019-05-04 fully resolve topdir for display in html
+    # TODO: 2019-05-04 need to uniquify diary subdir names in case more than one
+    #   'topdirname' in two separate data master dirs
     diary_subdir = diary_dir / experiment['info']['topdirname']
     diary_subdir.mkdir(parents=True, exist_ok=True)
 
@@ -438,14 +441,20 @@ def main(argv=None):
 
     data_dirs_parent = [d.parent.resolve() for d in data_dirs]
     data_dirs_commonpath = os.path.commonpath([str(d) for d in data_dirs_parent])
-    data_subdirs_str = ", ".join(
-            [str(d.relative_to(data_dirs_commonpath)) for d in data_dirs_parent]
-            )
+    if len(data_dirs) > 1:
+        data_subdirs_str = ", ".join(
+                [str(d.relative_to(data_dirs_commonpath)) for d in data_dirs_parent]
+                )
+        data_subdirs_str = "/{" + data_subdirs_str + "}"
+    else:
+        data_subdirs_str = ""
 
     with master_diary.open("w") as master_diary_fh:
         master_diary_fh.write(
                 diary_index_template.render(
-                    title='Data Diary for {0}/{{{1}}}'.format(data_dirs_commonpath, data_subdirs_str),
+                    title='Data Diary for {0}{1}'.format(
+                        data_dirs_commonpath, data_subdirs_str
+                        ),
                     datetime_generated=datetime_generated,
                     summaries=summaries,
                     experiments_subtitle=experiments_subtitle,
