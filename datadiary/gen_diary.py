@@ -188,13 +188,9 @@ def render_experiment_html(diary_dir, experiment, global_data):
     return section
 
 
-def catalog_dir(model_dir):
-    experiment = {}
-
-    # Training data
-    train_data_path = model_dir / 'train_history.json'
+def get_training_data(train_data_path):
     if not train_data_path.is_file():
-        return None
+        return {}
     with train_data_path.open("r") as train_data_fh:
         train_data = json.load(train_data_fh)
     train_data['epochs'] = range(1, len(train_data['acc'])+1)
@@ -208,7 +204,6 @@ def catalog_dir(model_dir):
     train_data['best_epoch'] = train_data['epochs'][best_i]
     train_data['best_val_loss'] = train_data['val_loss'][best_i]
     train_data['best_val_acc_perc'] = train_data['val_acc_perc'][best_i]
-
     train_data['max_loss'] = np.max(
             np.stack((train_data['val_loss'], train_data['loss']))
             )
@@ -216,48 +211,57 @@ def catalog_dir(model_dir):
             np.stack((train_data['val_acc_perc'], train_data['acc_perc']))
             )
     train_data['max_epoch'] = np.max(train_data['epochs'])
-    # write to experiment
-    experiment['train'] = train_data
+    return train_data
 
-    # Test data
-    test_data_path = model_dir / 'test.json'
+
+def get_test_data(test_data_path):
     try:
         with test_data_path.open("r") as test_data_fh:
             test_data = json.load(test_data_fh)
     except IOError:
         test_data = {}
-    # write to experiment
-    experiment['test'] = test_data
+    return test_data
 
-    # Info data
-    info_data_path = model_dir / 'info.json'
+
+def get_info_data(info_data_path):
+    model_dir = info_data_path.parent
     try:
         with info_data_path.open("r") as info_data_fh:
             info_data = json.load(info_data_fh)
     except IOError:
         info_data = {}
+    # datetime finished
     if 'datetime_utc' in info_data:
         datetime_finished_utc = datetime.datetime.strptime(
                 info_data['datetime_utc'],
                 "%Y-%m-%d %H:%M:%S"
                 )
         datetime_finished_utc = datetime_finished_utc.replace(tzinfo=datetime.timezone.utc)
-        datetime_finished = datetime_finished_utc.astimezone()
+        info_data['datetime_finished'] = datetime_finished_utc.astimezone()
     else:
-        datetime_finished = None
+        info_data['datetime_finished'] = None
     # model_name
-    model_name = model_dir.name.lstrip("data_")
+    if 'model_name' not in info_data:
+        info_data['model_name'] = model_dir.name.lstrip("data_")
     # extract job name
     if model_dir.parent.name.startswith("j"):
-        job_name = model_dir.parent.name
+        info_data['job_id'] = model_dir.parent.name
     else:
-        job_name = "Local Job"
-    info_data['model_name'] = model_name
-    info_data['job_id'] = job_name
+        info_data['job_id'] = "Local Job"
+    # record directory of data
     info_data['datadir'] = model_dir
-    info_data['datetime_finished'] = datetime_finished
-    # write to experiment
-    experiment['info'] = info_data
+    return info_data
+
+
+def catalog_dir(model_dir):
+    experiment = {}
+
+    # Training data
+    experiment['train'] = get_training_data(model_dir / 'train_history.json')
+    # Test data
+    experiment['test'] = get_test_data(model_dir / 'test.json')
+    # Info data
+    experiment['info'] = get_info_data(model_dir / 'info.json')
 
     return experiment
 
