@@ -9,25 +9,47 @@
 
 <body>
     <h1>Model: {{ job['model_name'] }}</h1>
-    <table>
-        <tr><td>Directory</td><td><code>{{ job['datadir'] }}</code></td></tr>
-        <tr><td>Job</td><td><code>{{ job['job_id'] }}</code></td></tr>
-    </table>
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-3">Directory</div>
+            <div class="col-sm"><code>{{ job['datadir'] }}</code></div>
+        </div>
+        <div class="row">
+            <div class="col-sm-3">Job</div>
+            <div class="col-sm"><code>{{ job['job_id'] }}</code></div>
+        </div>
+    </div>
+
     <h2>Model Details</h2>
-    <table>
-        <tr><td>Optimizer</td><td><code>{{ job['model_optimizer_name'] }}({{ job['model_optimizer_config_str'] }})</code></td></tr>
-        <tr><td>Loss</td><td><code>{{ job['model_loss'] }}</code></td></tr>
-    </table>
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-3">Optimizer</div>
+            <div class="col-sm"><code>{{ job['model_optimizer_name'] }}({{ job['model_optimizer_config_str'] }})</code></div>
+        </div>
+        <div class="row">
+            <div class="col-sm-3">Loss</div>
+            <div class="col-sm"><code>{{ job['model_loss'] }}</code></div>
+        </div>
+    </div>
+
     <p>
     <img src="{{ job['model_diagram_img'] }}" style="{{ job['model_diagram_img_style'] }}">
     </p>
+
     <h2>Model Performance</h2>
-    <table>
+    <div class="container">
         {% if job['test_acc_perc'] is defined %}
-        <tr><td>Test Accuracy</td><td>{{ job['test_acc_perc'] }}%</td></tr>
+        <div class="row">
+            <div class="col-sm-3">Test Accuracy</div>
+            <div class="col-sm">{{ job['test_acc_perc'] }}%</div>
+        </div>
         {% endif %}
-        <tr><td>Best Validation Loss</td><td>Accuracy {{ job['best_val_acc_perc'] }}% at epoch {{ job['best_val_acc_epoch'] }}</td></tr>
-    </table>
+        <div class="row">
+            <div class="col-sm-3">Best Validation Loss</div>
+            <div class="col-sm">Accuracy {{ job['best_val_acc_perc'] }}% at epoch {{ job['best_val_acc_epoch'] }}</div>
+        </div>
+    </div>
+
     <p>
     <img src="{{ job['model_metrics_img'] }}" style="{{ job['model_metrics_img_style'] }}">
     </p>

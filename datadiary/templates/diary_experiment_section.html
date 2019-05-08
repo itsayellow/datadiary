@@ -1,19 +1,52 @@
 <h3 id="{{ job['datadir'] }}">{{ job['model_name'] }}</h3>
-<table>
-    <tr><td>Directory</td><td><code>{{ job['datadir'] }}</code></td></tr>
-    <tr><td>Job</td><td><code>{{ job['job_id'] }}</code></td></tr>
+<div class="container">
+    <div class="row">
+        <div class="col-sm">Directory</div>
+        <div class="col-sm-9"><code>{{ job['datadir'] }}</code></div>
+    </div>
+    <div class="row">
+        <div class="col-sm">Job</div>
+        <div class="col-sm-9"><code>{{ job['job_id'] }}</code></div>
     {% if job['test_acc_perc'] is defined %}
-    <tr><td>Test Accuracy</td><td>{{ job['test_acc_perc'] }}%</td></tr>
+    </div>
+    <div class="row">
+        <div class="col-sm">Test Accuracy</div>
+        <div class="col-sm-9">{{ job['test_acc_perc'] }}%</div>
+    </div>
     {% endif %}
-    <tr><td>Validation Accuracy at Best Epoch<br/>(Validation Loss)</td><td>{{ job['best_val_acc_perc'] }}%</td></tr>
-    <tr><td>Best Epoch<br/>(Validation Loss)</td><td>{{ job['best_val_acc_epoch'] }}</td></tr>
-    <tr><td>Optimizer</td><td><code>{{ job['model_optimizer_name'] }}({{ job['model_optimizer_config_str'] }})</code></td></tr>
-    <tr><td>Loss</td><td><code>{{ job['model_loss'] }}</code></td></tr>
-</table>
+    <div class="row">
+        <div class="col-sm">Validation Accuracy at Best Epoch<br/>(Validation Loss)</div>
+        <div class="col-sm-9">{{ job['best_val_acc_perc'] }}%</div>
+    </div>
+    <div class="row">
+        <div class="col-sm">Best Epoch<br/>(Validation Loss)</div>
+        <div class="col-sm-9">{{ job['best_val_acc_epoch'] }}</div>
+    </div>
+    <div class="row">
+        <div class="col-sm">Optimizer</div>
+        <div class="col-sm-9"><code>{{ job['model_optimizer_name'] }}({{ job['model_optimizer_config_str'] }})</code></div>
+    </div>
+    <div class="row">
+        <div class="col-sm">Loss</div>
+        <div class="col-sm-9"><code>{{ job['model_loss'] }}</code></div>
+    </div>
+</div>
 <p>
 <a href="{{ report_path }}">Full report</a>
 </p>
-<p>
-<img src="{{ job['model_diagram_img'] }}" style="vertical-align:top;{{ job['model_diagram_img_style'] }}">
-<img src="{{ job['model_metrics_img'] }}" style="vertical-align:top;{{ job['model_metrics_img_style'] }}">
-</p>
+<div class="container">
+    <div class="row">
+        <div class="col-sm-1">
+        </div>
+        <div class="col-sm">
+            <img src="{{ job['model_diagram_img'] }}">
+        </div>
+        <div class="col-sm-1">
+        </div>
+        <div class="col-sm">
+            <img src="{{ job['model_metrics_img'] }}">
+        </div>
+        <div class="col-sm-1">
+        </div>
+    </div>
+</div>

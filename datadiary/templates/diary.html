@@ -23,14 +23,14 @@
 {% for experiment in experiments %}
     <tr>
         <td>{{ experiment['info']['model_name'] }}</td>
-        {% if experiment['test_data']['test_acc_perc'] %}
-        <td>{{ "%.1f"|format(experiment['test_data']['test_acc_perc']) }}%</td>
+        {% if experiment['test']['test_acc_perc'] %}
+        <td>{{ "%.1f"|format(experiment['test']['test_acc_perc']) }}%</td>
         {% else %}
         <td></td>
         {% endif %}
-        <td>{{ "%.1f"|format(experiment['train_data']['best_val_acc_perc']) }}%</td>
-        <td>{{ experiment['train_data']['best_epoch'] }}</td>
-        <td>{{ experiment['train_data']['max_epoch'] }}</td>
+        <td>{{ "%.1f"|format(experiment['train']['best_val_acc_perc']) }}%</td>
+        <td>{{ experiment['train']['best_epoch'] }}</td>
+        <td>{{ experiment['train']['max_epoch'] }}</td>
     </tr>
 {% endfor %}
 </table>
