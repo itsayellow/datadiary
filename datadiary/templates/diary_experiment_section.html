@@ -1,25 +1,15 @@
 <h3 id="{{ job['datadir'] }}">{{ job['model_name'] }}</h3>
-<p>
-Directory: <code>{{ job['datadir'] }}</code>
-</p>
-<p>
-Job: <code>{{ job['job_id'] }}</code>
-</p>
-{% if job['test_acc_perc'] is defined %}
-<p>
-Test Accuracy: {{ job['test_acc_perc'] }}%
-</p>
-{% endif %}
-<p>
-Best Validation Loss: Accuracy {{ job['best_val_acc_perc'] }}%
-at epoch {{ job['best_val_acc_epoch'] }}
-</p>
-<p>
-Optimizer: <code>{{ job['model_optimizer_name'] }}({{ job['model_optimizer_config_str'] }})</code>
-</p>
-<p>
-Loss: <code>{{ job['model_loss'] }}</code>
-</p>
+<table>
+    <tr><td>Directory</td><td><code>{{ job['datadir'] }}</code></td></tr>
+    <tr><td>Job</td><td><code>{{ job['job_id'] }}</code></td></tr>
+    {% if job['test_acc_perc'] is defined %}
+    <tr><td>Test Accuracy</td><td>{{ job['test_acc_perc'] }}%</td></tr>
+    {% endif %}
+    <tr><td>Validation Accuracy of Best Epoch<br/>(Validation Loss)</td><td>{{ job['best_val_acc_perc'] }}%</td></tr>
+    <tr><td>Best Epoch<br/>(Validation Loss)</td><td>{{ job['best_val_acc_epoch'] }}</td></tr>
+    <tr><td>Optimizer</td><td><code>{{ job['model_optimizer_name'] }}({{ job['model_optimizer_config_str'] }})</code></td></tr>
+    <tr><td>Loss</td><td><code>{{ job['model_loss'] }}</code></td></tr>
+</table>
 <p>
 <a href="{{ report_path }}">Full report</a>
 </p>
