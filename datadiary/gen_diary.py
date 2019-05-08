@@ -16,7 +16,6 @@ import os
 import os.path
 import pathlib
 import sys
-import warnings
 from contextlib import redirect_stderr
 
 import imagesize
@@ -29,10 +28,6 @@ with redirect_stderr(open(os.devnull, "w")):
     from keras.models import load_model
 #from keras.utils.generic_utils import serialize_keras_object
 import numpy as np
-import matplotlib
-# png-generation only, no interactive GUI
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 
 # custom version of keras.utils.vis_utils to get dpi argument
 from datadiary.keras_vis_utils import plot_model
@@ -323,7 +318,6 @@ def get_model_dirs(data_topdirs):
     Returns (list): list of directories containing saved_models dir,
         file train_history.json, and possibly file test.json
     """
-    # TODO 2019-05-07: consider globbing for * and */* instead of ** to speed up
     all_subdirs = []
     for data_topdir in data_topdirs:
         all_subdirs.extend(data_topdir.glob('**'))

@@ -8,9 +8,6 @@
 # https://dev.to/goyder/automatic-reporting-in-python---part-3-packaging-it-up-1185
 
 
-import os
-import os.path
-
 import matplotlib
 # png-generation only, no interactive GUI
 matplotlib.use("Agg")
