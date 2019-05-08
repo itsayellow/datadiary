@@ -5,7 +5,7 @@
     {% if job['test_acc_perc'] is defined %}
     <tr><td>Test Accuracy</td><td>{{ job['test_acc_perc'] }}%</td></tr>
     {% endif %}
-    <tr><td>Validation Accuracy of Best Epoch<br/>(Validation Loss)</td><td>{{ job['best_val_acc_perc'] }}%</td></tr>
+    <tr><td>Validation Accuracy at Best Epoch<br/>(Validation Loss)</td><td>{{ job['best_val_acc_perc'] }}%</td></tr>
     <tr><td>Best Epoch<br/>(Validation Loss)</td><td>{{ job['best_val_acc_epoch'] }}</td></tr>
     <tr><td>Optimizer</td><td><code>{{ job['model_optimizer_name'] }}({{ job['model_optimizer_config_str'] }})</code></td></tr>
     <tr><td>Loss</td><td><code>{{ job['model_loss'] }}</code></td></tr>

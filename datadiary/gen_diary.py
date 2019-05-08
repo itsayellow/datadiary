@@ -422,9 +422,9 @@ def main(argv=None):
 
     print("Diary output to: {0}".format(diary_dir))
     print("Rendering HTML summaries of all jobs...")
-    sections = []
+    experiment_summaries = []
     for experiment in tqdm.tqdm(experiments, leave=False, unit='job'):
-        sections.append(
+        experiment_summaries.append(
                 render_experiment_html(diary_dir, experiment, global_data)
                 )
 
@@ -496,7 +496,8 @@ def main(argv=None):
                     datetime_generated=datetime_generated,
                     summaries=summaries,
                     experiments_subtitle=experiments_subtitle,
-                    experiments=sections
+                    experiment_summaries=experiment_summaries,
+                    experiments=experiments
                     )
                 )
     print("Finished.")

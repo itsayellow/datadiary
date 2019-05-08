@@ -9,14 +9,34 @@
 <p>Generated {{ datetime_generated }}</p>
 
 <h2>Summary and Rankings</h2>
+<table>
+    <tr>
+        <td>Model Name</td>
+        <td>Test Accuracy</td>
+        <td>Best Validation Accuracy</td>
+        <td>Best Epoch</td>
+    </tr>
+{% for experiment in experiments %}
+    <tr>
+        <td>{{ experiment['info']['model_name'] }}</td>
+        {% if experiment['test_data']['test_acc_perc'] %}
+        <td>{{ "%.1f"|format(experiment['test_data']['test_acc_perc']) }}%</td>
+        {% else %}
+        <td></td>
+        {% endif %}
+        <td>{{ "%.1f"|format(experiment['train_data']['best_val_acc_perc']) }}%</td>
+        <td>{{ experiment['train_data']['best_epoch'] }}</td>
+    </tr>
+{% endfor %}
+</table>
 {% for summary in summaries %}
 {{ summary }}
 {% endfor %}
 
 <h2>All Experiments</h2>
 <p><i>{{ experiments_subtitle }}</i></p>
-{% for experiment in experiments %}
-{{ experiment }}
+{% for experiment_summary in experiment_summaries %}
+{{ experiment_summary }}
 {% endfor %}
 
 </body>
