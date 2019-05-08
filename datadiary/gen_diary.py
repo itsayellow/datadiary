@@ -412,7 +412,7 @@ def render_diary(diary_dir, experiments, global_data, data_topdirs):
     with master_diary.open("w") as master_diary_fh:
         master_diary_fh.write(
                 diary_index_template.render(
-                    title='Data Diary for {0}{1}'.format(
+                    title='Data Diary: {0}{1}'.format(
                         data_dirs_commonpath, data_subdirs_str
                         ),
                     datetime_generated=datetime_generated,
