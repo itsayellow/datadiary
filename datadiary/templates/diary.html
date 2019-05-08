@@ -11,13 +11,15 @@
 
 <h2>Summary and Rankings</h2>
 <table>
+    <thead>
     <tr>
-        <td>Model Name</td>
-        <td>Test Accuracy</td>
-        <td>Best Validation Accuracy</td>
-        <td>Best Epoch</td>
-        <td>Total Epochs</td>
+        <th>Model Name</th>
+        <th>Test Accuracy</th>
+        <th>Best Validation Accuracy</th>
+        <th>Best Epoch</th>
+        <th>Total Epochs</th>
     </tr>
+    </thead>
 {% for experiment in experiments %}
     <tr>
         <td>{{ experiment['info']['model_name'] }}</td>
