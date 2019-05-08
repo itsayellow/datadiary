@@ -308,6 +308,23 @@ def catalog_dir(model_dir):
     except IOError:
         test_data = {}
 
+    # extract info data
+    info_data_path = model_dir / 'info.json'
+    try:
+        with info_data_path.open("r") as info_data_fh:
+            info_data = json.load(info_data_fh)
+    except IOError:
+        info_data = {}
+    if 'datetime_utc' in info_data:
+        datetime_finished_utc = datetime.datetime.strptime(
+                info_out['datetime_utc'],
+                "%Y-%m-%d %H:%M:%S"
+                )
+        datetime_finished_utc = datetime_finished_utc.replace(tzinfo=datetime.timezone.utc())
+        datetime_finished = datetime_finished_utc.astimezone()
+    else:
+        datetime_finished = None
+
     # convert data to numpy arrays
     for varname in train_data:
         train_data[varname] = np.array(train_data[varname])
@@ -333,6 +350,7 @@ def catalog_dir(model_dir):
     experiment_info['model_name'] = model_name
     experiment_info['job_id'] = job_name
     experiment_info['datadir'] = model_dir
+    experiment_info['datetime_finished'] = datetime_finished
 
     return {'info':experiment_info, 'train_data':train_data, 'test_data':test_data}
 
