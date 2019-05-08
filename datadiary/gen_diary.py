@@ -220,6 +220,7 @@ def render_experiment_html(diary_dir, experiment, global_data):
             )
     model_loss_type = my_model.loss
     #model_metrics = my_model.metrics
+    test_acc_perc = experiment.get('test_data',{}).get('test_acc_perc', None)
 
     # Use dpi=192 for 2x size.
     # Size image in html down by 1/2x to get same size with 2x dpi.
@@ -250,6 +251,8 @@ def render_experiment_html(diary_dir, experiment, global_data):
     job['model_diagram_img_style'] = model_img_size_str
     job['model_metrics_img'] = 'training_metrics.png'
     job['model_metrics_img_style'] = plot_img_size_str
+    if test_acc_perc is not None:
+        job['test_acc_perc'] = '{0:.1f}'.format(test_acc_perc)
     job['best_val_acc_perc'] = '{0:.1f}'.format(train_data['best_val_acc_perc'])
     job['best_val_acc_epoch'] = train_data['best_epoch']
     job['model_optimizer_name'] = model_opt_name

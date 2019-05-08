@@ -30,6 +30,11 @@
     </p>
 
     <h2>Model Performance</h2>
+    {% if job['test_acc_perc'] is defined %}
+    <p>
+    Test Accuracy: {{ job['test_acc_perc'] }}%
+    </p>
+    {% endif %}
     <p>
     Best Validation Loss: Accuracy {{ job['best_val_acc_perc'] }}%
     at epoch {{ job['best_val_acc_epoch'] }}
