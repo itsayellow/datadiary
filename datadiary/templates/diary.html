@@ -15,6 +15,7 @@
         <td>Test Accuracy</td>
         <td>Best Validation Accuracy</td>
         <td>Best Epoch</td>
+        <td>Total Epochs</td>
     </tr>
 {% for experiment in experiments %}
     <tr>
@@ -26,9 +27,11 @@
         {% endif %}
         <td>{{ "%.1f"|format(experiment['train_data']['best_val_acc_perc']) }}%</td>
         <td>{{ experiment['train_data']['best_epoch'] }}</td>
+        <td>{{ experiment['train_data']['max_epoch'] }}</td>
     </tr>
 {% endfor %}
 </table>
+
 {% for summary in summaries %}
 {{ summary }}
 {% endfor %}
