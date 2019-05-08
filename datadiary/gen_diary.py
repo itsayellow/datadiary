@@ -264,21 +264,17 @@ def render_experiment_html(diary_dir, experiment, global_data):
     return section
 
 
-def catalog_dir(data_subdir):
-    if data_subdir.name.startswith("data_"):
-        job_name = "Local Job"
-        datadir = data_subdir
-    else:
-        job_name = data_subdir.name
-        try:
-            datadir = list(data_subdir.glob('data_*'))[0]
-        except IndexError:
-            return None
+def catalog_dir(model_dir):
+    model_name = model_dir.name.lstrip("data_")
 
-    model_name = datadir.name.lstrip("data_")
+    # extract job name
+    if model_dir.parent.name.startswith("j"):
+        job_name = model_dir.parent.name
+    else:
+        job_name = "Local Job"
 
     # extract training data
-    train_data_path = datadir / 'train_history.json'
+    train_data_path = model_dir / 'train_history.json'
     if not train_data_path.is_file():
         return None
     with train_data_path.open("r") as train_data_fh:
@@ -286,7 +282,7 @@ def catalog_dir(data_subdir):
     train_data['epochs'] = range(1, len(train_data['acc'])+1)
 
     # extract test data
-    test_data_path = datadir / 'test.json'
+    test_data_path = model_dir / 'test.json'
     try:
         with test_data_path.open("r") as test_data_fh:
             test_data = json.load(test_data_fh)
@@ -317,36 +313,35 @@ def catalog_dir(data_subdir):
     experiment_info = {}
     experiment_info['model_name'] = model_name
     experiment_info['job_id'] = job_name
-    experiment_info['datadir'] = datadir
-    experiment_info['topdir'] = data_subdir
-    experiment_info['topdirname'] = data_subdir.name
+    experiment_info['datadir'] = model_dir
+    experiment_info['topdir'] = model_dir
+    experiment_info['topdirname'] = model_dir.name
 
     return {'info':experiment_info, 'train_data':train_data, 'test_data':test_data}
 
 
-def catalog_all_dirs(data_dirs):
+def catalog_all_dirs(model_dirs):
     # Find max loss over all datasets, so we can adjust all
     #   loss plots from 0 to max loss (consistent ylim for all plots)
     global_data = {}
     experiments = []
-    for data_dir in data_dirs:
-        for data_subdir in [x for x in data_dir.iterdir() if x.is_dir()]:
-            data_subdir_data = catalog_dir(data_subdir)
-            if data_subdir_data is None:
-                continue
-            experiments.append(data_subdir_data)
-            global_data['max_loss'] = max(
-                    global_data.get('max_loss', 0),
-                    data_subdir_data['train_data']['max_loss']
-                    )
-            global_data['max_acc_perc'] = max(
-                    global_data.get('max_acc_perc', 0),
-                    data_subdir_data['train_data']['max_acc_perc']
-                    )
-            global_data['min_best_epoch'] = min(
-                    global_data.get('min_best_epoch', 1e6),
-                    data_subdir_data['train_data']['best_epoch']
-                    )
+    for model_dir in model_dirs:
+        model_dir_data = catalog_dir(model_dir)
+        if model_dir_data is None:
+            continue
+        experiments.append(model_dir_data)
+        global_data['max_loss'] = max(
+                global_data.get('max_loss', 0),
+                model_dir_data['train_data']['max_loss']
+                )
+        global_data['max_acc_perc'] = max(
+                global_data.get('max_acc_perc', 0),
+                model_dir_data['train_data']['max_acc_perc']
+                )
+        global_data['min_best_epoch'] = min(
+                global_data.get('min_best_epoch', 1e6),
+                model_dir_data['train_data']['best_epoch']
+                )
 
     return (experiments, global_data)
 
@@ -372,12 +367,38 @@ def create_ranking(experiments, title, sort_key, reverse, info_dict_create):
             )
 
 
+def get_model_dirs(data_topdirs):
+    """
+    Args:
+        datadirs (list): top-level list of directories to search for model
+            directories
+
+    Returns (list): list of directories containing saved_models dir,
+        file train_history.json, and possibly file test.json
+    """
+    # TODO 2019-05-07: consider globbing for * and */* instead of ** to speed up
+    all_subdirs = []
+    for data_topdir in data_topdirs:
+        all_subdirs.extend(data_topdir.glob('**'))
+
+    all_subdirs = set(all_subdirs)
+
+    model_dirs = []
+    for subdir in all_subdirs:
+        if (subdir / "train_history.json").is_file() and (subdir / "saved_models").is_dir():
+            model_dirs.append(subdir)
+    return model_dirs
+
+
 def main(argv=None):
     args = process_command_line(argv)
-    data_dirs = [pathlib.Path(dir) for dir in args.datadir]
     diary_dir = pathlib.Path(args.diary)
 
-    (experiments, global_data) = catalog_all_dirs(data_dirs)
+    data_topdirs = [pathlib.Path(dir) for dir in args.datadir]
+    model_dirs = get_model_dirs(data_topdirs)
+
+    (experiments, global_data) = catalog_all_dirs(model_dirs)
+
     # sort by validation accuracy
     experiments.sort(key=lambda x: x['train_data']['best_val_acc_perc'], reverse=True)
     experiments_subtitle = '(Sorted by Validation Accuracy)'
@@ -439,9 +460,9 @@ def main(argv=None):
     diary_index_template = JINJA_ENV.get_template("diary.html")
     datetime_generated = datetime.datetime.now().strftime("%Y-%m-%d %a %I:%M%p")
 
-    data_dirs_parent = [d.parent.resolve() for d in data_dirs]
+    data_dirs_parent = [d.parent.resolve() for d in data_topdirs]
     data_dirs_commonpath = os.path.commonpath([str(d) for d in data_dirs_parent])
-    if len(data_dirs) > 1:
+    if len(data_topdirs) > 1:
         data_subdirs_str = ", ".join(
                 [str(d.relative_to(data_dirs_commonpath)) for d in data_dirs_parent]
                 )
