@@ -36,7 +36,6 @@ import matplotlib.pyplot as plt
 
 # custom version of keras.utils.vis_utils to get dpi argument
 from datadiary.keras_vis_utils import plot_model
-
 import datadiary.plotting as plotting
 
 TEMPLATE_SEARCH_PATH = [pathlib.Path(__file__).parent / 'templates']
@@ -99,7 +98,7 @@ def hash_string(in_str, hash_len=6):
 
 def render_experiment_html(diary_dir, experiment, global_data):
     data_subdir = experiment['info']['datadir']
-    train_data = experiment['train_data']
+    train_data = experiment['train']
 
     # get hash of datadir
     dirhash = hash_string(str(experiment['info']['datadir']), hash_len=16)
@@ -131,7 +130,7 @@ def render_experiment_html(diary_dir, experiment, global_data):
             )
     model_loss_type = my_model.loss
     #model_metrics = my_model.metrics
-    test_acc_perc = experiment.get('test_data',{}).get('test_acc_perc', None)
+    test_acc_perc = experiment.get('test',{}).get('test_acc_perc', None)
 
     # Use dpi=192 for 2x size.
     # Size image in html down by 1/2x to get same size with 2x dpi.
@@ -195,31 +194,47 @@ def render_experiment_html(diary_dir, experiment, global_data):
 
 
 def catalog_dir(model_dir):
-    model_name = model_dir.name.lstrip("data_")
+    experiment = {}
 
-    # extract job name
-    if model_dir.parent.name.startswith("j"):
-        job_name = model_dir.parent.name
-    else:
-        job_name = "Local Job"
-
-    # extract training data
+    # Training data
     train_data_path = model_dir / 'train_history.json'
     if not train_data_path.is_file():
         return None
     with train_data_path.open("r") as train_data_fh:
         train_data = json.load(train_data_fh)
     train_data['epochs'] = range(1, len(train_data['acc'])+1)
+    # convert data to numpy arrays
+    for varname in train_data:
+        train_data[varname] = np.array(train_data[varname])
+    train_data['val_acc_perc'] = 100*train_data['val_acc']
+    train_data['acc_perc'] = 100*train_data['acc']
+    # find bests and maxs
+    best_i = np.argmin(train_data['val_loss'])
+    train_data['best_epoch'] = train_data['epochs'][best_i]
+    train_data['best_val_loss'] = train_data['val_loss'][best_i]
+    train_data['best_val_acc_perc'] = train_data['val_acc_perc'][best_i]
 
-    # extract test data
+    train_data['max_loss'] = np.max(
+            np.stack((train_data['val_loss'], train_data['loss']))
+            )
+    train_data['max_acc_perc'] = np.max(
+            np.stack((train_data['val_acc_perc'], train_data['acc_perc']))
+            )
+    train_data['max_epoch'] = np.max(train_data['epochs'])
+    # write to experiment
+    experiment['train'] = train_data
+
+    # Test data
     test_data_path = model_dir / 'test.json'
     try:
         with test_data_path.open("r") as test_data_fh:
             test_data = json.load(test_data_fh)
     except IOError:
         test_data = {}
+    # write to experiment
+    experiment['test'] = test_data
 
-    # extract info data
+    # Info data
     info_data_path = model_dir / 'info.json'
     try:
         with info_data_path.open("r") as info_data_fh:
@@ -235,35 +250,21 @@ def catalog_dir(model_dir):
         datetime_finished = datetime_finished_utc.astimezone()
     else:
         datetime_finished = None
+    # model_name
+    model_name = model_dir.name.lstrip("data_")
+    # extract job name
+    if model_dir.parent.name.startswith("j"):
+        job_name = model_dir.parent.name
+    else:
+        job_name = "Local Job"
+    info_data['model_name'] = model_name
+    info_data['job_id'] = job_name
+    info_data['datadir'] = model_dir
+    info_data['datetime_finished'] = datetime_finished
+    # write to experiment
+    experiment['info'] = info_data
 
-    # convert data to numpy arrays
-    for varname in train_data:
-        train_data[varname] = np.array(train_data[varname])
-
-    train_data['val_acc_perc'] = 100*train_data['val_acc']
-    train_data['acc_perc'] = 100*train_data['acc']
-
-    # find bests and maxs
-    best_i = np.argmin(train_data['val_loss'])
-    train_data['best_epoch'] = train_data['epochs'][best_i]
-    train_data['best_val_loss'] = train_data['val_loss'][best_i]
-    train_data['best_val_acc_perc'] = train_data['val_acc_perc'][best_i]
-
-    train_data['max_loss'] = np.max(
-            np.stack((train_data['val_loss'], train_data['loss']))
-            )
-    train_data['max_acc_perc'] = np.max(
-            np.stack((train_data['val_acc_perc'], train_data['acc_perc']))
-            )
-    train_data['max_epoch'] = np.max(train_data['epochs'])
-
-    experiment_info = {}
-    experiment_info['model_name'] = model_name
-    experiment_info['job_id'] = job_name
-    experiment_info['datadir'] = model_dir
-    experiment_info['datetime_finished'] = datetime_finished
-
-    return {'info':experiment_info, 'train_data':train_data, 'test_data':test_data}
+    return experiment
 
 
 def catalog_all_dirs(model_dirs):
@@ -278,15 +279,15 @@ def catalog_all_dirs(model_dirs):
         experiments.append(model_dir_data)
         global_data['max_loss'] = max(
                 global_data.get('max_loss', 0),
-                model_dir_data['train_data']['max_loss']
+                model_dir_data['train']['max_loss']
                 )
         global_data['max_acc_perc'] = max(
                 global_data.get('max_acc_perc', 0),
-                model_dir_data['train_data']['max_acc_perc']
+                model_dir_data['train']['max_acc_perc']
                 )
         global_data['min_best_epoch'] = min(
                 global_data.get('min_best_epoch', 1e6),
-                model_dir_data['train_data']['best_epoch']
+                model_dir_data['train']['best_epoch']
                 )
 
     return (experiments, global_data)
@@ -338,7 +339,7 @@ def get_model_dirs(data_topdirs):
 
 def render_diary(diary_dir, experiments, global_data, data_topdirs):
     # sort by validation accuracy
-    experiments.sort(key=lambda x: x['train_data']['best_val_acc_perc'], reverse=True)
+    experiments.sort(key=lambda x: x['train']['best_val_acc_perc'], reverse=True)
     experiments_subtitle = '(Sorted by Validation Accuracy)'
 
     print("Diary output to: {0}".format(diary_dir))
@@ -352,17 +353,17 @@ def render_diary(diary_dir, experiments, global_data, data_topdirs):
     # create summaries
     summaries = []
 
-    # tolerate empty test_data dict in data dirs
+    # tolerate empty test dict in data dirs
     summaries.append(
             create_ranking(
-                [exp for exp in experiments if 'test_acc_perc' in exp['test_data']],
+                [exp for exp in experiments if 'test_acc_perc' in exp['test']],
                 title="Best Test Accuracy",
-                sort_key=lambda x: x['test_data']['test_acc_perc'],
+                sort_key=lambda x: x['test']['test_acc_perc'],
                 reverse=True,
                 info_dict_create=lambda x: {
                     'name':x['info']['model_name'],
                     'datadir':x['info']['datadir'],
-                    'criteria_value':"{0:.1f}%".format(x['test_data']['test_acc_perc'])
+                    'criteria_value':"{0:.1f}%".format(x['test']['test_acc_perc'])
                     },
                 )
             )
@@ -370,12 +371,12 @@ def render_diary(diary_dir, experiments, global_data, data_topdirs):
             create_ranking(
                 experiments,
                 title="Best Validation Accuracy",
-                sort_key=lambda x: x['train_data']['best_val_acc_perc'],
+                sort_key=lambda x: x['train']['best_val_acc_perc'],
                 reverse=True,
                 info_dict_create=lambda x: {
                     'name':x['info']['model_name'],
                     'datadir':x['info']['datadir'],
-                    'criteria_value':"{0:.1f}%".format(x['train_data']['best_val_acc_perc'])
+                    'criteria_value':"{0:.1f}%".format(x['train']['best_val_acc_perc'])
                     },
                 )
             )
@@ -383,12 +384,12 @@ def render_diary(diary_dir, experiments, global_data, data_topdirs):
             create_ranking(
                 experiments,
                 title="Quickest Training (Minimum Best Epoch)",
-                sort_key=lambda x: x['train_data']['best_epoch'],
+                sort_key=lambda x: x['train']['best_epoch'],
                 reverse=False,
                 info_dict_create=lambda x: {
                     'name':x['info']['model_name'],
                     'datadir':x['info']['datadir'],
-                    'criteria_value':"Epoch {0}".format(x['train_data']['best_epoch'])
+                    'criteria_value':"Epoch {0}".format(x['train']['best_epoch'])
                     },
                 )
             )
