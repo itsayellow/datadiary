@@ -191,7 +191,7 @@ def render_experiment_html(diary_dir, experiment, global_data):
     train_data = experiment['train_data']
 
     # get hash of datadir
-    dirhash = hash_string(str(experiment['info']['datadir']))
+    dirhash = hash_string(str(experiment['info']['datadir']), hash_len=16)
 
     diary_subdir = diary_dir / (experiment['info']['model_name'] + "_" + dirhash)
     diary_subdir.mkdir(parents=True, exist_ok=True)
