@@ -425,15 +425,7 @@ def get_model_dirs(data_topdirs):
     return model_dirs
 
 
-def main(argv=None):
-    args = process_command_line(argv)
-    diary_dir = pathlib.Path(args.diary)
-
-    data_topdirs = [pathlib.Path(dir) for dir in args.datadir]
-    model_dirs = get_model_dirs(data_topdirs)
-
-    (experiments, global_data) = catalog_all_dirs(model_dirs)
-
+def render_diary(diary_dir, experiments, global_data, data_topdirs):
     # sort by validation accuracy
     experiments.sort(key=lambda x: x['train_data']['best_val_acc_perc'], reverse=True)
     experiments_subtitle = '(Sorted by Validation Accuracy)'
@@ -518,6 +510,16 @@ def main(argv=None):
                     experiments=experiments
                     )
                 )
+def main(argv=None):
+    args = process_command_line(argv)
+    diary_dir = pathlib.Path(args.diary)
+
+    data_topdirs = [pathlib.Path(dir) for dir in args.datadir]
+    model_dirs = get_model_dirs(data_topdirs)
+
+    (experiments, global_data) = catalog_all_dirs(model_dirs)
+
+    render_diary(diary_dir, experiments, global_data, data_topdirs)
     print("Finished.")
 
     return 0
