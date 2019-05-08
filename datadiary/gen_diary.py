@@ -10,6 +10,7 @@
 
 import argparse
 import datetime
+import hashlib
 import json
 import os
 import os.path
@@ -170,14 +171,29 @@ def gen_data_plots(diary_dir, train_data, global_data):
     plt.close()
 
 
+def hash_string(in_str, hash_len=6):
+    """Create a hash string based on input string
+
+    Arguments:
+        in_str (str): input string
+        hash_len (int): length of returned hex hash string
+
+    Returns:
+        (str): hex ([0-9a-f]+) string of length hash_len, corresponding to hash
+            of in_str
+    """
+    model_hash = hashlib.md5(in_str.encode('utf8'))
+    return model_hash.hexdigest()[:hash_len]
+
+
 def render_experiment_html(diary_dir, experiment, global_data):
     data_subdir = experiment['info']['datadir']
     train_data = experiment['train_data']
 
-    # TODO: 2019-05-04 fully resolve topdir for display in html
-    # TODO: 2019-05-04 need to uniquify diary subdir names in case more than one
-    #   'topdirname' in two separate data master dirs
-    diary_subdir = diary_dir / experiment['info']['topdirname']
+    # get hash of datadir
+    dirhash = hash_string(str(experiment['info']['datadir']))
+
+    diary_subdir = diary_dir / (experiment['info']['model_name'] + "_" + dirhash)
     diary_subdir.mkdir(parents=True, exist_ok=True)
 
     # make plot png
@@ -229,7 +245,7 @@ def render_experiment_html(diary_dir, experiment, global_data):
     job = {}
     job['model_name'] = experiment['info']['model_name']
     job['job_id'] = experiment['info']['job_id']
-    job['topdir'] = experiment['info']['topdir']
+    job['datadir'] = experiment['info']['datadir']
     job['model_diagram_img'] = 'model.png'
     job['model_diagram_img_style'] = model_img_size_str
     job['model_metrics_img'] = 'training_metrics.png'
@@ -314,8 +330,6 @@ def catalog_dir(model_dir):
     experiment_info['model_name'] = model_name
     experiment_info['job_id'] = job_name
     experiment_info['datadir'] = model_dir
-    experiment_info['topdir'] = model_dir
-    experiment_info['topdirname'] = model_dir.name
 
     return {'info':experiment_info, 'train_data':train_data, 'test_data':test_data}
 
@@ -423,7 +437,7 @@ def main(argv=None):
                 reverse=True,
                 info_dict_create=lambda x: {
                     'name':x['info']['model_name'],
-                    'topdir':x['info']['topdir'],
+                    'datadir':x['info']['datadir'],
                     'criteria_value':"{0:.1f}%".format(x['test_data']['test_acc_perc'])
                     },
                 )
@@ -436,7 +450,7 @@ def main(argv=None):
                 reverse=True,
                 info_dict_create=lambda x: {
                     'name':x['info']['model_name'],
-                    'topdir':x['info']['topdir'],
+                    'datadir':x['info']['datadir'],
                     'criteria_value':"{0:.1f}%".format(x['train_data']['best_val_acc_perc'])
                     },
                 )
@@ -449,7 +463,7 @@ def main(argv=None):
                 reverse=False,
                 info_dict_create=lambda x: {
                     'name':x['info']['model_name'],
-                    'topdir':x['info']['topdir'],
+                    'datadir':x['info']['datadir'],
                     'criteria_value':"Epoch {0}".format(x['train_data']['best_epoch'])
                     },
                 )

@@ -7,11 +7,13 @@
 </head>
 
 <body>
-    <h1>{{ job['job_id'] }}</h1>
+    <h1>Model: {{ job['model_name'] }}</h1>
     <p>
-    Directory: <code>{{ job['topdir'] }}</code>
+    Directory: <code>{{ job['datadir'] }}</code>
     </p>
-    <h2>Model: {{ job['model_name'] }}</h2>
+    <p>
+    Job: <code>{{ job['job_id'] }}</code>
+    </p>
     <p>
     <img src="{{ job['model_diagram_img'] }}" style="{{ job['model_diagram_img_style'] }}">
     </p>

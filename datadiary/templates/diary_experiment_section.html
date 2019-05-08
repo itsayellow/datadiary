@@ -1,7 +1,9 @@
-<h3 id="{{ job['topdir'] }}">{{ job['job_id'] }}</h3>
-<h4>Model: {{ job['model_name'] }}</h4>
+<h3 id="{{ job['datadir'] }}">{{ job['model_name'] }}</h3>
 <p>
-Directory: <code>{{ job['topdir'] }}</code>
+Directory: <code>{{ job['datadir'] }}</code>
+</p>
+<p>
+Job: <code>{{ job['job_id'] }}</code>
 </p>
 <p>
 Best Validation Loss: Accuracy {{ job['best_val_acc_perc'] }}%
