@@ -317,10 +317,10 @@ def catalog_dir(model_dir):
         info_data = {}
     if 'datetime_utc' in info_data:
         datetime_finished_utc = datetime.datetime.strptime(
-                info_out['datetime_utc'],
+                info_data['datetime_utc'],
                 "%Y-%m-%d %H:%M:%S"
                 )
-        datetime_finished_utc = datetime_finished_utc.replace(tzinfo=datetime.timezone.utc())
+        datetime_finished_utc = datetime_finished_utc.replace(tzinfo=datetime.timezone.utc)
         datetime_finished = datetime_finished_utc.astimezone()
     else:
         datetime_finished = None
