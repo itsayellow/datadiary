@@ -467,7 +467,7 @@ def render_diary(diary_dir, experiments, global_data, data_topdirs):
 
     # TODO 2019-05-08: it's nice to put timezone in header of column instead of
     #   each row, but this is strictly not right with daylight savings, as
-    #   old dates may be different daylight savings than now.
+    #   old dates may be different daylight/standard tz than now.
     with master_diary.open("w") as master_diary_fh:
         master_diary_fh.write(
                 diary_index_template.render(
