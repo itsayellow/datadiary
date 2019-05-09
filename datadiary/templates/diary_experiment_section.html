@@ -8,12 +8,10 @@
         <div class="col-sm">Job</div>
         <div class="col-sm-9"><code>{{ job['job_id'] }}</code></div>
     </div>
-    {% if job['test_acc_perc'] is defined %}
     <div class="row">
         <div class="col-sm">Test Accuracy</div>
-        <div class="col-sm-9">{{ job['test_acc_perc'] }}%</div>
+        <div class="col-sm-9">{{ job['test_acc_perc']|default('?? ') }}%</div>
     </div>
-    {% endif %}
     <div class="row">
         <div class="col-sm">Validation Accuracy at Best Epoch<br/>(Validation Loss)</div>
         <div class="col-sm-9">{{ job['best_val_acc_perc'] }}%</div>
