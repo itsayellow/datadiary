@@ -7,8 +7,8 @@
     <div class="row">
         <div class="col-sm">Job</div>
         <div class="col-sm-9"><code>{{ job['job_id'] }}</code></div>
-    {% if job['test_acc_perc'] is defined %}
     </div>
+    {% if job['test_acc_perc'] is defined %}
     <div class="row">
         <div class="col-sm">Test Accuracy</div>
         <div class="col-sm-9">{{ job['test_acc_perc'] }}%</div>
