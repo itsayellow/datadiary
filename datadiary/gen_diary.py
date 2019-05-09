@@ -133,6 +133,7 @@ def plot_model_get_info(data_subdir, output_diagram_file):
     del my_model
     # NEED TO DO THIS or else memory leak and slowdown happen
     #   (keras 2.2.4, tensorflow 1.13.1)
+    #   https://github.com/keras-team/keras/issues/2102
     keras.backend.clear_session()
 
     # TODO 2019-05-09: these should all be in experiment['info'], at least
@@ -389,6 +390,8 @@ def render_diary(diary_dir, experiments, global_data, data_topdirs):
     print("Diary output to: {0}".format(diary_dir))
     print("Rendering HTML summaries of all jobs...")
     experiment_summaries = []
+    # TODO 2019-05-09: create images separately in multiprocessing pools, then
+    #   when all are done, render html sequentially here, since it takes no time.
     for experiment in tqdm.tqdm(experiments, leave=False, unit='job'):
         experiment_summaries.append(
                 render_experiment_html(diary_dir, experiment, global_data)
@@ -438,13 +441,15 @@ def render_diary(diary_dir, experiments, global_data, data_topdirs):
                 )
             )
 
-    # copy sortable.js into diary dir
+    # copy sortable.js into diary dir for click-sort of table rows
+    # https://www.kryogenix.org/code/browser/sorttable/
     with (diary_dir / 'sorttable.js').open("w") as sorttable_js_fh:
         sorttable_js_fh.write(
                 JINJA_ENV.get_template("sorttable.js").render()
                 )
 
     # create index/summary html report
+    # https://minicss.org/docs
     master_diary = diary_dir / 'index.html'
     diary_index_template = JINJA_ENV.get_template("diary.html")
     datetime_generated = datetime.datetime.now().strftime("%Y-%m-%d %a %I:%M%p")
