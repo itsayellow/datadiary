@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>{{ title }}</title>
     <link rel="stylesheet" href="https://cdn.rawgit.com/Chalarangelo/mini.css/v3.0.1/dist/mini-default.min.css">
+    <script src="sorttable.js"></script>
 </head>
 <body>
 <header class="sticky">
@@ -12,7 +13,7 @@
 <p>Generated {{ datetime_generated }}</p>
 
 <h2>Summary and Rankings</h2>
-<table class="striped">
+<table class="striped sortable">
     <thead>
     <tr>
         <th>Model Name</th>
@@ -20,7 +21,7 @@
         <th>Best Validation Accuracy</th>
         <th>Best Epoch</th>
         <th>Total Epochs</th>
-        <th>Date/Time Run</th>
+        <th>Date/Time Run ({{ local_timezone }})</th>
     </tr>
     </thead>
 {% for experiment in experiments %}
@@ -34,7 +35,7 @@
         <td>{{ "%.1f"|format(experiment['train']['best_val_acc_perc']) }}%</td>
         <td>{{ experiment['train']['best_epoch'] }}</td>
         <td>{{ experiment['train']['max_epoch'] }}</td>
-        <td>{{ experiment['info']['datetime_formatted'] }}</td>
+        <td sortable_customkey={{ experiment['info']['datetime_sortable'] }}>{{ experiment['info']['datetime_formatted'] }}</td>
     </tr>
 {% endfor %}
 </table>

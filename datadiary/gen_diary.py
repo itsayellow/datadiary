@@ -240,7 +240,8 @@ def get_info_data(info_data_path):
                 )
         datetime_finished_utc = datetime_finished_utc.replace(tzinfo=datetime.timezone.utc)
         info_data['datetime_finished'] = datetime_finished_utc.astimezone()
-        info_data['datetime_formatted'] = info_data['datetime_finished'].strftime("%Y-%m-%d %I:%M%p %Z")
+        info_data['datetime_formatted'] = info_data['datetime_finished'].strftime("%Y-%m-%d %I:%M%p")
+        info_data['datetime_sortable'] = info_data['datetime_finished'].strftime("%Y%m%d%H%M")
     else:
         info_data['datetime_finished'] = None
     # model_name
@@ -398,10 +399,17 @@ def render_diary(diary_dir, experiments, global_data, data_topdirs):
                 )
             )
 
+    # copy sortable.js into diary dir
+    with (diary_dir / 'sorttable.js').open("w") as sorttable_js_fh:
+        sorttable_js_fh.write(
+                JINJA_ENV.get_template("sorttable.js").render()
+                )
+
     # create index/summary html report
     master_diary = diary_dir / 'index.html'
     diary_index_template = JINJA_ENV.get_template("diary.html")
     datetime_generated = datetime.datetime.now().strftime("%Y-%m-%d %a %I:%M%p")
+    local_timezone=datetime.datetime.now(datetime.timezone.utc).astimezone().strftime("%Z")
 
     data_dirs_parent = [d.parent.resolve() for d in data_topdirs]
     data_dirs_commonpath = os.path.commonpath([str(d) for d in data_dirs_parent])
@@ -413,12 +421,16 @@ def render_diary(diary_dir, experiments, global_data, data_topdirs):
     else:
         data_subdirs_str = ""
 
+    # TODO 2019-05-08: it's nice to put timezone in header of column instead of
+    #   each row, but this is strictly not right with daylight savings, as
+    #   old dates may be different daylight savings than now.
     with master_diary.open("w") as master_diary_fh:
         master_diary_fh.write(
                 diary_index_template.render(
                     title='Data Diary: {0}{1}'.format(
                         data_dirs_commonpath, data_subdirs_str
                         ),
+                    local_timezone=local_timezone,
                     datetime_generated=datetime_generated,
                     summaries=summaries,
                     experiments_subtitle=experiments_subtitle,
