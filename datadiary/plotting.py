@@ -69,7 +69,7 @@ def plot_loss_acc(fig, epochs, train_data, global_data):
     return(ax1, ax2)
 
 
-def gen_data_plots(diary_dir, train_data, global_data):
+def gen_data_plots(output_file, train_data, global_data):
     best_epoch = train_data['best_epoch']
 
     # actually plot
@@ -94,7 +94,7 @@ def gen_data_plots(diary_dir, train_data, global_data):
 
     # save and display to computer
     fig.savefig(
-            str(diary_dir / "training_metrics.png"),
+            str(output_file),
             dpi=200,
             bbox_inches='tight'
             )

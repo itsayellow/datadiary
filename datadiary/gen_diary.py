@@ -91,7 +91,7 @@ def hash_string(in_str, hash_len=6):
     return model_hash.hexdigest()[:hash_len]
 
 
-def plot_model_get_info(data_subdir, diary_subdir):
+def plot_model_get_info(data_subdir, output_diagram_file):
     """Plotting model diagram and extracting model info
     Everything that needs a Keras model in this function
 
@@ -124,7 +124,7 @@ def plot_model_get_info(data_subdir, diary_subdir):
     # Size image in html down by 1/2x to get same size with 2x dpi.
     datadiary.keras_vis_utils.plot_model(
             my_model,
-            to_file=str(diary_subdir / 'model.png'),
+            to_file=str(output_diagram_file),
             show_shapes=True,
             dpi=192,
             transparent_bg=True
@@ -135,7 +135,9 @@ def plot_model_get_info(data_subdir, diary_subdir):
     #   (keras 2.2.4, tensorflow 1.13.1)
     keras.backend.clear_session()
 
-    return (model_opt_name, model_opt_config_fmt, model_opt_str, model_loss_type)
+    # TODO 2019-05-09: these should all be in experiment['info'], at least
+    #   check
+    return (model_opt_name, model_opt_config, model_loss_type)
 
 
 def render_experiment_html(diary_dir, experiment, global_data):
@@ -148,12 +150,29 @@ def render_experiment_html(diary_dir, experiment, global_data):
     diary_subdir = diary_dir / (experiment['info']['model_name'] + "_" + dirhash)
     diary_subdir.mkdir(parents=True, exist_ok=True)
 
-    # make plot png
-    plotting.gen_data_plots(diary_subdir, train_data, global_data)
+    # make plot png if necessary
+    training_plot_path = diary_subdir / "training_metrics.png"
+    if not training_plot_path.is_file():
+        plotting.gen_data_plots(training_plot_path, train_data, global_data)
 
     # model diagram and get model info
-    (model_opt_name, model_opt_config_fmt, model_opt_str, model_loss_type) = plot_model_get_info(
-            data_subdir, diary_subdir
+    diagram_path = diary_subdir / 'model.png'
+    if not diagram_path.is_file():
+        (model_opt_name, model_opt_config, model_loss_type) = plot_model_get_info(
+            data_subdir, diagram_path
+            )
+    else:
+        model_info = experiment['info'].get('model_info', {})
+        model_opt_name = model_info.get('optimizer',{}).get('class_name', '')
+        model_opt_config = model_info.get('optimizer',{}).get('config', {})
+        model_loss_type = model_info.get('loss','')
+    model_opt_config_fmt = [
+            "{0}: {1:.3g}".format(x, model_opt_config[x]) for x in model_opt_config
+            ]
+    model_opt_str = ", ".join(
+            [
+            "{0}={1:.3g}".format(x, model_opt_config[x]) for x in model_opt_config
+                ]
             )
 
     test_acc_perc = experiment.get('test',{}).get('test_acc_perc', None)
