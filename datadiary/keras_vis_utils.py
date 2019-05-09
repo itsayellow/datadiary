@@ -83,7 +83,8 @@ def model_to_dot(model,
                  show_shapes=False,
                  show_layer_names=True,
                  rankdir='TB',
-                 dpi=96
+                 dpi=96,
+                 transparent_bg=False,
                  ):
     """Convert a Keras model to dot format.
 
@@ -105,6 +106,8 @@ def model_to_dot(model,
     _check_pydot()
     dot = pydot.Dot()
     dot.set('rankdir', rankdir)
+    if transparent_bg:
+        dot.set('bgcolor', "#ffffff00")
     dot.set('concentrate', True)
     dot.set('dpi', dpi)
     dot.set_node_defaults(shape='record')
@@ -148,7 +151,11 @@ def model_to_dot(model,
             label = '%s\n|{input:|output:}|{{%s}|{%s}}' % (label,
                                                            inputlabels,
                                                            outputlabels)
-        node = pydot.Node(layer_id, label=label)
+        if transparent_bg:
+            node_kwargs = {'style':'filled', 'fillcolor':'#ffffffff'}
+        else:
+            node_kwargs = {}
+        node = pydot.Node(layer_id, label=label, **node_kwargs)
         dot.add_node(node)
 
     # Connect nodes with edges.
@@ -159,6 +166,15 @@ def model_to_dot(model,
             if node_key in model._network_nodes:
                 for inbound_layer in node.inbound_layers:
                     inbound_layer_id = str(id(inbound_layer))
+                    # add node if inbound_layer_id node is not present
+                    if not dot.get_node(inbound_layer_id):
+                        dot.add_node(
+                                pydot.Node(
+                                    inbound_layer_id,
+                                    label='Input',
+                                    **node_kwargs
+                                    )
+                                )
                     dot.add_edge(pydot.Edge(inbound_layer_id, layer_id))
     return dot
 
@@ -168,7 +184,9 @@ def plot_model(model,
                show_shapes=False,
                show_layer_names=True,
                rankdir='TB',
-               dpi=96):
+               dpi=96,
+               transparent_bg=False
+               ):
     """Converts a Keras model to dot format and save to a file.
 
     # Arguments
@@ -181,7 +199,9 @@ def plot_model(model,
             'TB' creates a vertical plot;
             'LR' creates a horizontal plot.
     """
-    dot = model_to_dot(model, show_shapes, show_layer_names, rankdir, dpi)
+    dot = model_to_dot(
+            model, show_shapes, show_layer_names, rankdir, dpi, transparent_bg
+            )
     _, extension = os.path.splitext(to_file)
     if not extension:
         extension = 'png'

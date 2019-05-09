@@ -31,7 +31,7 @@ with redirect_stderr(open(os.devnull, "w")):
 import numpy as np
 
 # custom version of keras.utils.vis_utils to get dpi argument
-from datadiary.keras_vis_utils import plot_model
+import datadiary.keras_vis_utils
 import datadiary.plotting as plotting
 
 TEMPLATE_SEARCH_PATH = [pathlib.Path(__file__).parent / 'templates']
@@ -130,11 +130,12 @@ def render_experiment_html(diary_dir, experiment, global_data):
 
     # Use dpi=192 for 2x size.
     # Size image in html down by 1/2x to get same size with 2x dpi.
-    plot_model(
+    datadiary.keras_vis_utils.plot_model(
             my_model,
             to_file=str(diary_subdir / 'model.png'),
             show_shapes=True,
-            dpi=192
+            dpi=192,
+            transparent_bg=True
             )
 
     # create html report
