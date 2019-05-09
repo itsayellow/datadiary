@@ -27,7 +27,6 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 # Mute Keras chatter messages
 with redirect_stderr(open(os.devnull, "w")):
     from keras.models import load_model
-#from keras.utils.generic_utils import serialize_keras_object
 import numpy as np
 
 # custom version of keras.utils.vis_utils to get dpi argument
@@ -112,7 +111,6 @@ def render_experiment_html(diary_dir, experiment, global_data):
     my_model = load_model(str(best_weights_file))
 
     # get model info
-    #new_model_opt = serialize_keras_object(my_model.optimizer)
     model_opt_name = my_model.optimizer.__class__.__module__ + \
             "." + my_model.optimizer.__class__.__name__
     model_opt_config = my_model.optimizer.get_config()
@@ -344,7 +342,7 @@ def get_model_dirs(data_topdirs):
 
 def render_diary(diary_dir, experiments, global_data, data_topdirs):
     # sort by validation accuracy
-    experiments.sort(key=lambda x: x['train']['best_val_acc_perc'], reverse=True)
+    experiments.sort(key=lambda x: x.get('test', {}).get('test_acc_perc', 0), reverse=True)
     experiments_subtitle = '(Sorted by Validation Accuracy)'
 
     print("Diary output to: {0}".format(diary_dir))
