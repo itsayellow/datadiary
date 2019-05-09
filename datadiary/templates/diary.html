@@ -37,7 +37,7 @@
         <td>{{ "%.1f"|format(experiment['train']['best_val_acc_perc']) }}%</td>
         <td>{{ experiment['train']['best_epoch'] }}</td>
         <td>{{ experiment['train']['max_epoch'] }}</td>
-        <td sortable_customkey={{ experiment['info']['datetime_sortable'] }}>{{ experiment['info']['datetime_formatted'] }}</td>
+        <td sorttable_customkey="{{ experiment['info']['datetime_sortable'] }}">{{ experiment['info']['datetime_formatted'] }}</td>
     </tr>
 {% endfor %}
 </table>
