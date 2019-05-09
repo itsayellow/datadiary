@@ -13,7 +13,7 @@
 <h1 >{{ title }}</h1>
 <p>Generated {{ datetime_generated }}</p>
 
-<h2>Summary and Rankings</h2>
+<h2>Summary Table</h2>
 <!-- table class="striped sortable" style="max-height:830px" -->
 <table class="striped sortable">
     <thead>
@@ -42,10 +42,11 @@
 {% endfor %}
 </table>
 
+<h2>Rankings</h2>
 <div class="container">
     <div class="row">
-        {% for summary in summaries %}
-        <div class="col-sm-4">{{ summary }}</div>
+        {% for ranking in rankings%}
+        <div class="col-sm-4">{{ ranking }}</div>
         {% endfor %}
     </div>
 </div>

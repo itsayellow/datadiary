@@ -375,11 +375,11 @@ def render_diary(diary_dir, experiments, global_data, data_topdirs):
                 render_experiment_html(diary_dir, experiment, global_data)
                 )
 
-    # create summaries
-    summaries = []
+    # create rankings
+    rankings = []
 
     # tolerate empty test dict in data dirs
-    summaries.append(
+    rankings.append(
             create_ranking(
                 [exp for exp in experiments if 'test_acc_perc' in exp['test']],
                 title="Best Test Accuracy",
@@ -392,7 +392,7 @@ def render_diary(diary_dir, experiments, global_data, data_topdirs):
                     },
                 )
             )
-    summaries.append(
+    rankings.append(
             create_ranking(
                 experiments,
                 title="Best Validation Accuracy",
@@ -405,7 +405,7 @@ def render_diary(diary_dir, experiments, global_data, data_topdirs):
                     },
                 )
             )
-    summaries.append(
+    rankings.append(
             create_ranking(
                 experiments,
                 title="Quickest Training (Minimum Best Epoch)",
@@ -452,7 +452,7 @@ def render_diary(diary_dir, experiments, global_data, data_topdirs):
                         ),
                     local_timezone=local_timezone,
                     datetime_generated=datetime_generated,
-                    summaries=summaries,
+                    rankings=rankings,
                     experiments_subtitle=experiments_subtitle,
                     experiment_summaries=experiment_summaries,
                     experiments=experiments
