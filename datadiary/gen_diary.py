@@ -15,6 +15,7 @@ import json
 import os
 import os.path
 import pathlib
+#import pprint # debug
 import sys
 from contextlib import redirect_stderr
 
@@ -238,6 +239,7 @@ def get_info_data(info_data_path):
                 )
         datetime_finished_utc = datetime_finished_utc.replace(tzinfo=datetime.timezone.utc)
         info_data['datetime_finished'] = datetime_finished_utc.astimezone()
+        info_data['datetime_formatted'] = info_data['datetime_finished'].strftime("%Y-%m-%d %I:%M%p %Z")
     else:
         info_data['datetime_finished'] = None
     # model_name
@@ -262,6 +264,9 @@ def catalog_dir(model_dir):
     experiment['test'] = get_test_data(model_dir / 'test.json')
     # Info data
     experiment['info'] = get_info_data(model_dir / 'info.json')
+
+    # DEBUG only
+    #pprint.pprint(experiment)
 
     return experiment
 
@@ -420,6 +425,8 @@ def render_diary(diary_dir, experiments, global_data, data_topdirs):
                     experiments=experiments
                     )
                 )
+
+
 def main(argv=None):
     args = process_command_line(argv)
     diary_dir = pathlib.Path(args.diary)

@@ -20,6 +20,7 @@
         <th>Best Validation Accuracy</th>
         <th>Best Epoch</th>
         <th>Total Epochs</th>
+        <th>Date/Time Run</th>
     </tr>
     </thead>
 {% for experiment in experiments %}
@@ -33,6 +34,7 @@
         <td>{{ "%.1f"|format(experiment['train']['best_val_acc_perc']) }}%</td>
         <td>{{ experiment['train']['best_epoch'] }}</td>
         <td>{{ experiment['train']['max_epoch'] }}</td>
+        <td>{{ experiment['info']['datetime_formatted'] }}</td>
     </tr>
 {% endfor %}
 </table>
