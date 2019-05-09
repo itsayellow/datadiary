@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>{{ title }}</title>
+    <title>Data Diary: {{ title }}</title>
     <link rel="stylesheet" href="https://cdn.rawgit.com/Chalarangelo/mini.css/v3.0.1/dist/mini-default.min.css">
     <script src="sorttable.js"></script>
 </head>
@@ -42,9 +42,13 @@
 {% endfor %}
 </table>
 
-{% for summary in summaries %}
-{{ summary }}
-{% endfor %}
+<div class="container">
+    <div class="row">
+        {% for summary in summaries %}
+        <div class="col-sm-4">{{ summary }}</div>
+        {% endfor %}
+    </div>
+</div>
 
 <h2>All Experiments</h2>
 <p><i>{{ experiments_subtitle }}</i></p>
