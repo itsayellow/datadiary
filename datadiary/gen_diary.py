@@ -26,7 +26,7 @@ import tqdm
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 # Mute Keras chatter messages
 with redirect_stderr(open(os.devnull, "w")):
-    from keras.models import load_model
+    import keras
 import numpy as np
 
 # custom version of keras.utils.vis_utils to get dpi argument
@@ -91,24 +91,19 @@ def hash_string(in_str, hash_len=6):
     return model_hash.hexdigest()[:hash_len]
 
 
-def render_experiment_html(diary_dir, experiment, global_data):
-    data_subdir = experiment['info']['datadir']
-    train_data = experiment['train']
+def plot_model_get_info(data_subdir, diary_subdir):
+    """Plotting model diagram and extracting model info
+    Everything that needs a Keras model in this function
 
-    # get hash of datadir
-    dirhash = hash_string(str(experiment['info']['datadir']), hash_len=16)
-
-    diary_subdir = diary_dir / (experiment['info']['model_name'] + "_" + dirhash)
-    diary_subdir.mkdir(parents=True, exist_ok=True)
-
-    # make plot png
-    plotting.gen_data_plots(diary_subdir, train_data, global_data)
-
+    Args:
+        data_subdir (pathlib.Path): specific dir containint saved_models dir
+        diary_subdir (pathlib.Path): output diary subdir (for model diagram png)
+    """
     # make model structure png
     best_weights_file = data_subdir / 'saved_models' / 'weights.best.hdf5'
     if not best_weights_file.is_file():
         best_weights_file = list((data_subdir / 'saved_models').glob('*.hdf5'))[0]
-    my_model = load_model(str(best_weights_file))
+    my_model = keras.models.load_model(str(best_weights_file))
 
     # get model info
     model_opt_name = my_model.optimizer.__class__.__module__ + \
@@ -124,7 +119,6 @@ def render_experiment_html(diary_dir, experiment, global_data):
             )
     model_loss_type = my_model.loss
     #model_metrics = my_model.metrics
-    test_acc_perc = experiment.get('test',{}).get('test_acc_perc', None)
 
     # Use dpi=192 for 2x size.
     # Size image in html down by 1/2x to get same size with 2x dpi.
@@ -135,6 +129,34 @@ def render_experiment_html(diary_dir, experiment, global_data):
             dpi=192,
             transparent_bg=True
             )
+
+    del my_model
+    # NEED TO DO THIS or else memory leak and slowdown happen
+    #   (keras 2.2.4, tensorflow 1.13.1)
+    keras.backend.clear_session()
+
+    return (model_opt_name, model_opt_config_fmt, model_opt_str, model_loss_type)
+
+
+def render_experiment_html(diary_dir, experiment, global_data):
+    data_subdir = experiment['info']['datadir']
+    train_data = experiment['train']
+
+    # get hash of datadir
+    dirhash = hash_string(str(experiment['info']['datadir']), hash_len=16)
+
+    diary_subdir = diary_dir / (experiment['info']['model_name'] + "_" + dirhash)
+    diary_subdir.mkdir(parents=True, exist_ok=True)
+
+    # make plot png
+    plotting.gen_data_plots(diary_subdir, train_data, global_data)
+
+    # model diagram and get model info
+    (model_opt_name, model_opt_config_fmt, model_opt_str, model_loss_type) = plot_model_get_info(
+            data_subdir, diary_subdir
+            )
+
+    test_acc_perc = experiment.get('test',{}).get('test_acc_perc', None)
 
     # create html report
     diary_entry_template = JINJA_ENV.get_template("diary_entry.html")
