@@ -365,7 +365,7 @@ def get_model_dirs(data_topdirs):
 def render_diary(diary_dir, experiments, global_data, data_topdirs):
     # sort by validation accuracy
     experiments.sort(key=lambda x: x.get('test', {}).get('test_acc_perc', 0), reverse=True)
-    experiments_subtitle = '(Sorted by Validation Accuracy)'
+    experiments_subtitle = '(Sorted by Test Accuracy)'
 
     print("Diary output to: {0}".format(diary_dir))
     print("Rendering HTML summaries of all jobs...")
