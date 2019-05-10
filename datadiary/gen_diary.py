@@ -454,6 +454,7 @@ def render_diary(diary_dir, experiments, global_data, data_topdirs):
     expts_need_img = need_image_created(experiments, diary_dir)
 
     print("Creating data plots and model diagrams...")
+    # on my imac 2017 this is 4x faster than sequential processing
     with multiprocessing.Pool() as mp:
         for _ in tqdm.tqdm(
                 mp.imap(
