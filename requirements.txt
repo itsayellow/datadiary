@@ -10,7 +10,7 @@ matplotlib
 tensorflow
 keras
 pydot
-Pillow
+#Pillow
 tqdm
 
 # my package(s)

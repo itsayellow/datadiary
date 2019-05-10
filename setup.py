@@ -31,7 +31,7 @@ setup(
             'tensorflow',
             'keras',
             'pydot',
-            'Pillow', # TODO: remove!
+            #'Pillow',
             'imagesize',
             'tqdm',
             ],
