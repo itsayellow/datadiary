@@ -1,1 +1,1 @@
-from datadiary.gen_diary import main
+from datadiary.gendiary import main
