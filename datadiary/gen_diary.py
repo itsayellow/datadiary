@@ -454,18 +454,20 @@ def render_diary(diary_dir, experiments, global_data, data_topdirs):
     expts_need_img = need_image_created(experiments, diary_dir)
 
     print("Creating data plots and model diagrams...")
-    #for experiment in tqdm.tqdm(expts_need_img, leave=False, unit='job'):
-    #    experiment_create_images(experiment, diary_dir, global_data)
-
     with multiprocessing.Pool() as mp:
-        mp.map(
-                functools.partial(
-                    experiment_create_images,
-                    diary_dir = diary_dir,
-                    global_data = global_data
+        for _ in tqdm.tqdm(
+                mp.imap(
+                    functools.partial(
+                        experiment_create_images,
+                        diary_dir = diary_dir,
+                        global_data = global_data
+                        ),
+                    expts_need_img
                     ),
-                expts_need_img
-                )
+                total=len(expts_need_img),
+                leave=False,
+                unit='job'):
+            pass
 
     print("Rendering HTML summaries of all jobs...")
     for experiment in tqdm.tqdm(experiments, leave=False, unit='job'):
