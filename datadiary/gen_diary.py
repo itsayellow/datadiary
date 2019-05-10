@@ -12,11 +12,13 @@ import argparse
 import datetime
 import hashlib
 import json
+import multiprocessing
 import os
 import os.path
 import pathlib
 #import pprint # debug
 import sys
+import functools
 from contextlib import redirect_stderr
 
 import imagesize
@@ -426,7 +428,7 @@ def need_image_created(experiments, diary_dir):
     return experiments_need_image
 
 
-def experiment_create_images(diary_dir, experiment, global_data):
+def experiment_create_images(experiment, diary_dir, global_data):
     data_subdir = experiment['info']['datadir']
     train_data = experiment['train']
 
@@ -452,8 +454,18 @@ def render_diary(diary_dir, experiments, global_data, data_topdirs):
     expts_need_img = need_image_created(experiments, diary_dir)
 
     print("Creating data plots and model diagrams...")
-    for experiment in tqdm.tqdm(expts_need_img, leave=False, unit='job'):
-        experiment_create_images(diary_dir, experiment, global_data)
+    #for experiment in tqdm.tqdm(expts_need_img, leave=False, unit='job'):
+    #    experiment_create_images(experiment, diary_dir, global_data)
+
+    with multiprocessing.Pool() as mp:
+        mp.map(
+                functools.partial(
+                    experiment_create_images,
+                    diary_dir = diary_dir,
+                    global_data = global_data
+                    ),
+                expts_need_img
+                )
 
     print("Rendering HTML summaries of all jobs...")
     for experiment in tqdm.tqdm(experiments, leave=False, unit='job'):
