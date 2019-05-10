@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
-#
-# Post-training view of loss, accuracy metrics
+"""
+Create hierarchical HTML description of Machine Learning training experiments.
+Includes summaries and plots of data and metrics, and diagram of networks.
+"""
 
 # Jinja2 tutorial:
 # https://dev.to/goyder/automatic-reporting-in-python---part-1-from-planning-to-hello-world-32n1
@@ -55,7 +57,7 @@ def process_command_line(argv):
 
     # initialize the parser object:
     parser = argparse.ArgumentParser(
-            description="Plot training metrics.")
+            description="Create html tree of describing data of many jobs.")
 
     # specifying nargs= puts outputs of parser in list (even if nargs=1)
 
