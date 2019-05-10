@@ -91,6 +91,37 @@ def hash_string(in_str, hash_len=6):
     return model_hash.hexdigest()[:hash_len]
 
 
+def plot_model(data_subdir, output_diagram_file):
+    """Plotting model diagram and extracting model info
+    Everything that needs a Keras model in this function
+
+    Args:
+        data_subdir (pathlib.Path): specific dir containint saved_models dir
+        diary_subdir (pathlib.Path): output diary subdir (for model diagram png)
+    """
+    # make model structure png
+    best_weights_file = data_subdir / 'saved_models' / 'weights.best.hdf5'
+    if not best_weights_file.is_file():
+        best_weights_file = list((data_subdir / 'saved_models').glob('*.hdf5'))[0]
+    my_model = keras.models.load_model(str(best_weights_file))
+
+    # Use dpi=192 for 2x size.
+    # Size image in html down by 1/2x to get same size with 2x dpi.
+    datadiary.keras_vis_utils.plot_model(
+            my_model,
+            to_file=str(output_diagram_file),
+            show_shapes=True,
+            dpi=192,
+            transparent_bg=True
+            )
+
+    del my_model
+    # NEED TO DO THIS or else memory leak and slowdown happen
+    #   (keras 2.2.4, tensorflow 1.13.1)
+    #   https://github.com/keras-team/keras/issues/2102
+    keras.backend.clear_session()
+
+
 def plot_model_get_info(data_subdir, output_diagram_file):
     """Plotting model diagram and extracting model info
     Everything that needs a Keras model in this function
@@ -145,28 +176,14 @@ def render_experiment_html(diary_dir, experiment, global_data):
     data_subdir = experiment['info']['datadir']
     train_data = experiment['train']
 
-    # get hash of datadir
-    dirhash = hash_string(str(experiment['info']['datadir']), hash_len=16)
-
-    diary_subdir = diary_dir / (experiment['info']['model_name'] + "_" + dirhash)
+    diary_subdir = get_diary_subdir(diary_dir, experiment)
     diary_subdir.mkdir(parents=True, exist_ok=True)
 
-    # make plot png if necessary
-    training_plot_path = diary_subdir / "training_metrics.png"
-    if not training_plot_path.is_file():
-        plotting.gen_data_plots(training_plot_path, train_data, global_data)
-
-    # model diagram and get model info
-    diagram_path = diary_subdir / 'model.png'
-    if not diagram_path.is_file():
-        (model_opt_name, model_opt_config, model_loss_type) = plot_model_get_info(
-            data_subdir, diagram_path
-            )
-    else:
-        model_info = experiment['info'].get('model_info', {})
-        model_opt_name = model_info.get('optimizer',{}).get('class_name', '')
-        model_opt_config = model_info.get('optimizer',{}).get('config', {})
-        model_loss_type = model_info.get('loss','')
+    # get and format model info
+    model_info = experiment['info'].get('model_info', {})
+    model_opt_name = model_info.get('optimizer',{}).get('class_name', '')
+    model_opt_config = model_info.get('optimizer',{}).get('config', {})
+    model_loss_type = model_info.get('loss','')
     model_opt_config_fmt = [
             "{0}: {1:.3g}".format(x, model_opt_config[x]) for x in model_opt_config
             ]
@@ -382,16 +399,63 @@ def get_model_dirs(data_topdirs):
     return model_dirs
 
 
+def get_diary_subdir(diary_dir, experiment):
+    """Create diary subdirectory name based on experiment
+
+    Args:
+        diary_dir (pathlib.Path): parent diary directory
+        experiment (dict): experiment data structure
+
+    Returns pathlib.Path: diary subdirectory path
+    """
+    # get hash of datadir path
+    dirhash = hash_string(str(experiment['info']['datadir']), hash_len=16)
+    return diary_dir / (experiment['info']['model_name'] + "_" + dirhash)
+
+
+def need_image_created(experiments, diary_dir):
+    # TODO 20190509: regenerate all plots if one plot is missing? (ylim)
+    experiments_need_image = []
+    for experiment in experiments:
+        diary_subdir = get_diary_subdir(diary_dir, experiment)
+        diagram_path = diary_subdir / 'model.png'
+        training_plot_path = diary_subdir / "training_metrics.png"
+
+        if not diagram_path.is_file() or not training_plot_path.is_file():
+            experiments_need_image.append(experiment)
+    return experiments_need_image
+
+
+def experiment_create_images(diary_dir, experiment, global_data):
+    data_subdir = experiment['info']['datadir']
+    train_data = experiment['train']
+
+    diary_subdir = get_diary_subdir(diary_dir, experiment)
+    diary_subdir.mkdir(parents=True, exist_ok=True)
+
+    # make data plot
+    training_plot_path = diary_subdir / "training_metrics.png"
+    plotting.gen_data_plots(training_plot_path, train_data, global_data)
+
+    # make model diagram
+    diagram_path = diary_subdir / 'model.png'
+    plot_model(data_subdir, diagram_path)
+
+
 def render_diary(diary_dir, experiments, global_data, data_topdirs):
     # sort by validation accuracy
     experiments.sort(key=lambda x: x.get('test', {}).get('test_acc_perc', 0), reverse=True)
     experiments_subtitle = '(Sorted by Test Accuracy)'
 
     print("Diary output to: {0}".format(diary_dir))
-    print("Rendering HTML summaries of all jobs...")
     experiment_summaries = []
-    # TODO 2019-05-09: create images separately in multiprocessing pools, then
-    #   when all are done, render html sequentially here, since it takes no time.
+    expts_need_img = need_image_created(experiments, diary_dir)
+
+    print("Creating data plots and model diagrams...")
+    for experiment in tqdm.tqdm(expts_need_img, leave=False, unit='job'):
+        experiment_create_images(diary_dir, experiment, global_data)
+
+    print("Rendering HTML summaries of all jobs...")
     for experiment in tqdm.tqdm(experiments, leave=False, unit='job'):
         experiment_summaries.append(
                 render_experiment_html(diary_dir, experiment, global_data)
