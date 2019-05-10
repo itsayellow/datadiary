@@ -28,7 +28,7 @@
     </thead>
 {% for experiment in experiments %}
     <tr>
-        <td>{{ experiment['info']['model_name'] }}</td>
+        <td><a href="#{{ experiment['info']['datadir'] }}">{{ experiment['info']['model_name'] }}</a></td>
         {% if experiment['test']['test_acc_perc'] %}
         <td>{{ "%.1f"|format(experiment['test']['test_acc_perc']) }}%</td>
         {% else %}
