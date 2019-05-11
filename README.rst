@@ -22,4 +22,4 @@ Installation
 
   .. code:: bash
 
-     pipx install --spec git+https://bitbucket.org/itsayellow/datadiary datadiary
+     pipx install --spec git+https://github.com/itsayellow/datadiary datadiary
