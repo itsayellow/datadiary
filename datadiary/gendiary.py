@@ -565,17 +565,20 @@ def render_diary(diary_dir, experiments, global_data, data_topdirs):
                 )
 
 
-def main(argv=None):
-    args = process_command_line(argv)
-    diary_dir = pathlib.Path(args.diary)
-
-    data_topdirs = [pathlib.Path(dir) for dir in args.datadir]
+def generate_diary(diary_dir, data_dirs):
+    diary_dir = pathlib.Path(diary_dir)
+    data_topdirs = [pathlib.Path(dir) for dir in data_dirs]
     model_dirs = get_model_dirs(data_topdirs)
 
     (experiments, global_data) = catalog_all_dirs(model_dirs)
-
     render_diary(diary_dir, experiments, global_data, data_topdirs)
+
     print("Finished.")
+
+
+def main(argv=None):
+    args = process_command_line(argv)
+    generate_diary(args.diary, args.datadir)
 
     return 0
 
