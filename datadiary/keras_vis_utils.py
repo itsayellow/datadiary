@@ -2,6 +2,7 @@
 
 # Copied from Keras 2.2.4 distribution
 # Modified so that dpi is an argument.
+# Modified so that background transparency is an option.
 # This file will be unnecessary once the next version of Keras is released
 #
 # COPYRIGHT
