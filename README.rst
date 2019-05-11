@@ -12,6 +12,8 @@ Install `pipx <https://github.com/pipxproject/pipx>`_.
 
    pip install pipx
 
+Install datadiary
+
 * For local installation:
 
   .. code:: bash
