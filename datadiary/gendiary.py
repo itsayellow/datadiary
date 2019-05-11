@@ -57,7 +57,7 @@ def process_command_line(argv):
 
     # initialize the parser object:
     parser = argparse.ArgumentParser(
-            description="Create html tree of describing data of many jobs.")
+            description="Create html tree describing data of many jobs.")
 
     # specifying nargs= puts outputs of parser in list (even if nargs=1)
 
