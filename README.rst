@@ -6,6 +6,12 @@ Summarize Machine Learning experiment results in an HTML tree.
 Installation
 ------------
 
+Install `pipx <https://github.com/pipxproject/pipx>`_.
+
+.. code:: bash
+
+   pip install pipx
+
 * For local installation:
 
   .. code:: bash
