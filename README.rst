@@ -12,7 +12,7 @@ Install `pipx <https://github.com/pipxproject/pipx>`_.
 
    pip install pipx
 
-Install datadiary
+Install datadiary.
 
 * For local installation:
 
