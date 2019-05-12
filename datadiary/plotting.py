@@ -8,10 +8,21 @@
 # https://dev.to/goyder/automatic-reporting-in-python---part-3-packaging-it-up-1185
 
 
+import os
+from contextlib import redirect_stderr
+
 import matplotlib
 # png-generation only, no interactive GUI
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+# Mute Tensorflow chatter messages ('1' means filter out INFO messages.)
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
+# Mute Keras chatter messages
+with redirect_stderr(open(os.devnull, "w")):
+    import keras
+
+# custom version of keras.utils.vis_utils to get dpi argument and transparency
+import datadiary.keras_vis_utils
 
 
 def plot_vs_epoch(ax, epochs, train=None, val=None, do_legend=True):
@@ -102,3 +113,34 @@ def gen_data_plots(output_file, train_data, global_data):
     #   but somehow all figures are kept around until we close them!
     # So close figure each time after we save the image.
     plt.close()
+
+
+def plot_model(data_subdir, output_diagram_file):
+    """Plotting model diagram and extracting model info
+    Everything that needs a Keras model in this function
+
+    Args:
+        data_subdir (pathlib.Path): specific dir containint saved_models dir
+        diary_subdir (pathlib.Path): output diary subdir (for model diagram png)
+    """
+    # make model structure png
+    best_weights_file = data_subdir / 'saved_models' / 'weights.best.hdf5'
+    if not best_weights_file.is_file():
+        best_weights_file = list((data_subdir / 'saved_models').glob('*.hdf5'))[0]
+    my_model = keras.models.load_model(str(best_weights_file))
+
+    # Use dpi=192 for 2x size.
+    # Size image in html down by 1/2x to get same size with 2x dpi.
+    datadiary.keras_vis_utils.plot_model(
+            my_model,
+            to_file=str(output_diagram_file),
+            show_shapes=True,
+            dpi=192,
+            transparent_bg=True
+            )
+
+    del my_model
+    # NEED TO DO THIS or else memory leak and slowdown happen
+    #   (keras 2.2.4, tensorflow 1.13.1)
+    #   https://github.com/keras-team/keras/issues/2102
+    keras.backend.clear_session()

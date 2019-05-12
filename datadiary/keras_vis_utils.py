@@ -53,6 +53,14 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+from contextlib import redirect_stderr
+
+# Mute Tensorflow chatter messages ('1' means filter out INFO messages.)
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
+# Mute Keras chatter messages
+with redirect_stderr(open(os.devnull, "w")):
+    from keras.layers.wrappers import Wrapper
+    from keras.models import Sequential
 
 # `pydot` is an optional dependency,
 # see `extras_require` in `setup.py`.
@@ -101,9 +109,6 @@ def model_to_dot(model,
     # Returns
         A `pydot.Dot` instance representing the Keras model.
     """
-    from keras.layers.wrappers import Wrapper
-    from keras.models import Sequential
-
     _check_pydot()
     dot = pydot.Dot()
     dot.set('rankdir', rankdir)

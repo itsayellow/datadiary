@@ -15,27 +15,18 @@ import datetime
 import hashlib
 import json
 import multiprocessing
-import os
 import os.path
 import pathlib
 #import pprint # debug
 import sys
 import functools
-from contextlib import redirect_stderr
 
 import imagesize
 import jinja2
 import tqdm
-# Mute Tensorflow chatter messages ('1' means filter out INFO messages.)
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
-# Mute Keras chatter messages
-with redirect_stderr(open(os.devnull, "w")):
-    import keras
 import numpy as np
 
-# custom version of keras.utils.vis_utils to get dpi argument
-import datadiary.keras_vis_utils
-import datadiary.plotting as plotting
+import datadiary.plotting
 
 TEMPLATE_SEARCH_PATH = [pathlib.Path(__file__).parent / 'templates']
 JINJA_ENV = jinja2.Environment(
@@ -95,89 +86,7 @@ def hash_string(in_str, hash_len=6):
     return model_hash.hexdigest()[:hash_len]
 
 
-def plot_model(data_subdir, output_diagram_file):
-    """Plotting model diagram and extracting model info
-    Everything that needs a Keras model in this function
-
-    Args:
-        data_subdir (pathlib.Path): specific dir containint saved_models dir
-        diary_subdir (pathlib.Path): output diary subdir (for model diagram png)
-    """
-    # make model structure png
-    best_weights_file = data_subdir / 'saved_models' / 'weights.best.hdf5'
-    if not best_weights_file.is_file():
-        best_weights_file = list((data_subdir / 'saved_models').glob('*.hdf5'))[0]
-    my_model = keras.models.load_model(str(best_weights_file))
-
-    # Use dpi=192 for 2x size.
-    # Size image in html down by 1/2x to get same size with 2x dpi.
-    datadiary.keras_vis_utils.plot_model(
-            my_model,
-            to_file=str(output_diagram_file),
-            show_shapes=True,
-            dpi=192,
-            transparent_bg=True
-            )
-
-    del my_model
-    # NEED TO DO THIS or else memory leak and slowdown happen
-    #   (keras 2.2.4, tensorflow 1.13.1)
-    #   https://github.com/keras-team/keras/issues/2102
-    keras.backend.clear_session()
-
-
-def plot_model_get_info(data_subdir, output_diagram_file):
-    """Plotting model diagram and extracting model info
-    Everything that needs a Keras model in this function
-
-    Args:
-        data_subdir (pathlib.Path): specific dir containint saved_models dir
-        diary_subdir (pathlib.Path): output diary subdir (for model diagram png)
-    """
-    # make model structure png
-    best_weights_file = data_subdir / 'saved_models' / 'weights.best.hdf5'
-    if not best_weights_file.is_file():
-        best_weights_file = list((data_subdir / 'saved_models').glob('*.hdf5'))[0]
-    my_model = keras.models.load_model(str(best_weights_file))
-
-    # get model info
-    model_opt_name = my_model.optimizer.__class__.__module__ + \
-            "." + my_model.optimizer.__class__.__name__
-    model_opt_config = my_model.optimizer.get_config()
-    model_opt_config_fmt = [
-            "{0}: {1:.3g}".format(x, model_opt_config[x]) for x in model_opt_config
-            ]
-    model_opt_str = ", ".join(
-            [
-            "{0}={1:.3g}".format(x, model_opt_config[x]) for x in model_opt_config
-                ]
-            )
-    model_loss_type = my_model.loss
-    #model_metrics = my_model.metrics
-
-    # Use dpi=192 for 2x size.
-    # Size image in html down by 1/2x to get same size with 2x dpi.
-    datadiary.keras_vis_utils.plot_model(
-            my_model,
-            to_file=str(output_diagram_file),
-            show_shapes=True,
-            dpi=192,
-            transparent_bg=True
-            )
-
-    del my_model
-    # NEED TO DO THIS or else memory leak and slowdown happen
-    #   (keras 2.2.4, tensorflow 1.13.1)
-    #   https://github.com/keras-team/keras/issues/2102
-    keras.backend.clear_session()
-
-    # TODO 2019-05-09: these should all be in experiment['info'], at least
-    #   check
-    return (model_opt_name, model_opt_config, model_loss_type)
-
-
-def render_experiment_html(diary_dir, experiment, global_data):
-    data_subdir = experiment['info']['datadir']
+def render_experiment_html(diary_dir, experiment):
     train_data = experiment['train']
 
     diary_subdir = get_diary_subdir(diary_dir, experiment)
@@ -185,9 +94,9 @@ def render_experiment_html(diary_dir, experiment, global_data):
 
     # get and format model info
     model_info = experiment['info'].get('model_info', {})
-    model_opt_name = model_info.get('optimizer',{}).get('class_name', '')
-    model_opt_config = model_info.get('optimizer',{}).get('config', {})
-    model_loss_type = model_info.get('loss','')
+    model_opt_name = model_info.get('optimizer', {}).get('class_name', '')
+    model_opt_config = model_info.get('optimizer', {}).get('config', {})
+    model_loss_type = model_info.get('loss', '')
     model_opt_config_fmt = [
             "{0}: {1:.3g}".format(x, model_opt_config[x]) for x in model_opt_config
             ]
@@ -197,7 +106,7 @@ def render_experiment_html(diary_dir, experiment, global_data):
                 ]
             )
 
-    test_acc_perc = experiment.get('test',{}).get('test_acc_perc', None)
+    test_acc_perc = experiment.get('test', {}).get('test_acc_perc', None)
 
     # create html report
     diary_entry_template = JINJA_ENV.get_template("diary_entry.html")
@@ -301,8 +210,12 @@ def get_info_data(info_data_path):
                 )
         datetime_finished_utc = datetime_finished_utc.replace(tzinfo=datetime.timezone.utc)
         info_data['datetime_finished'] = datetime_finished_utc.astimezone()
-        info_data['datetime_formatted'] = info_data['datetime_finished'].strftime("%Y-%m-%d %I:%M%p")
-        info_data['datetime_sortable'] = info_data['datetime_finished'].strftime("%Y%m%d%H%M")
+        info_data['datetime_formatted'] = info_data['datetime_finished'].strftime(
+                "%Y-%m-%d %I:%M%p"
+                )
+        info_data['datetime_sortable'] = info_data['datetime_finished'].strftime(
+                "%Y%m%d%H%M"
+                )
     else:
         info_data['datetime_finished'] = None
     # model_name
@@ -439,11 +352,11 @@ def experiment_create_images(experiment, diary_dir, global_data):
 
     # make data plot
     training_plot_path = diary_subdir / "training_metrics.png"
-    plotting.gen_data_plots(training_plot_path, train_data, global_data)
+    datadiary.plotting.gen_data_plots(training_plot_path, train_data, global_data)
 
     # make model diagram
     diagram_path = diary_subdir / 'model.png'
-    plot_model(data_subdir, diagram_path)
+    datadiary.plotting.plot_model(data_subdir, diagram_path)
 
 
 def render_diary(diary_dir, experiments, global_data, data_topdirs):
@@ -462,8 +375,8 @@ def render_diary(diary_dir, experiments, global_data, data_topdirs):
                 mp.imap(
                     functools.partial(
                         experiment_create_images,
-                        diary_dir = diary_dir,
-                        global_data = global_data
+                        diary_dir=diary_dir,
+                        global_data=global_data
                         ),
                     expts_need_img
                     ),
@@ -475,7 +388,7 @@ def render_diary(diary_dir, experiments, global_data, data_topdirs):
     print("Rendering HTML summaries of all jobs...")
     for experiment in tqdm.tqdm(experiments, leave=False, unit='job'):
         experiment_summaries.append(
-                render_experiment_html(diary_dir, experiment, global_data)
+                render_experiment_html(diary_dir, experiment)
                 )
 
     # create rankings
@@ -534,7 +447,7 @@ def render_diary(diary_dir, experiments, global_data, data_topdirs):
     master_diary = diary_dir / 'index.html'
     diary_index_template = JINJA_ENV.get_template("diary.html")
     datetime_generated = datetime.datetime.now().strftime("%Y-%m-%d %a %I:%M%p")
-    local_timezone=datetime.datetime.now(datetime.timezone.utc).astimezone().strftime("%Z")
+    local_timezone = datetime.datetime.now(datetime.timezone.utc).astimezone().strftime("%Z")
 
     data_dirs_parent = [d.parent.resolve() for d in data_topdirs]
     data_dirs_commonpath = os.path.commonpath([str(d) for d in data_dirs_parent])
@@ -569,11 +482,10 @@ def generate_diary(diary_dir, data_dirs):
     diary_dir = pathlib.Path(diary_dir)
     data_topdirs = [pathlib.Path(dir) for dir in data_dirs]
     model_dirs = get_model_dirs(data_topdirs)
-
     (experiments, global_data) = catalog_all_dirs(model_dirs)
     render_diary(diary_dir, experiments, global_data, data_topdirs)
-
     print("Finished.")
+    return 0
 
 
 def main(argv=None):
