@@ -9,7 +9,7 @@ setup(
         name='datadiary',
         version='0.2',
         description='Generate html reports.',
-        author='Matthew Clapp',
+        author='Matthew A. Clapp',
         author_email='itsayellow+dev@gmail.com',
         license='MIT',
         classifiers=[
