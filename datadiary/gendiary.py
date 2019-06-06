@@ -489,6 +489,9 @@ def generate_diary(diary_dir, data_dirs):
 
 
 def main(argv=None):
+    # TODO 20190606: need to merge old diary entries even if not contained in
+    #   data (possibly have command-line switch to optionally recreate from
+    #   scratch.)
     args = process_command_line(argv)
     generate_diary(args.diary, args.datadir)
 
