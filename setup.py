@@ -40,5 +40,5 @@ setup(
                 'diarygen=datadiary.command_line:main'
                 ]
             },
-        #python_requires='>=3',
+        python_requires='>=3',
         )
