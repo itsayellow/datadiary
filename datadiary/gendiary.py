@@ -483,6 +483,7 @@ def generate_diary(diary_dir, data_dirs):
     data_topdirs = [pathlib.Path(dir) for dir in data_dirs]
     model_dirs = get_model_dirs(data_topdirs)
     (experiments, global_data) = catalog_all_dirs(model_dirs)
+    # TODO 20190607: Save/merge experiments into experiments.json in diary dir
     render_diary(diary_dir, experiments, global_data, data_topdirs)
     print("Finished.")
     return 0
@@ -491,7 +492,7 @@ def generate_diary(diary_dir, data_dirs):
 def main(argv=None):
     # TODO 20190606: need to merge old diary entries even if not contained in
     #   data (possibly have command-line switch to optionally recreate from
-    #   scratch.)
+    #   scratch.) MERGE
     args = process_command_line(argv)
     generate_diary(args.diary, args.datadir)
 
